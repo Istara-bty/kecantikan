@@ -1,1 +1,819 @@
+// ============================================================
+// KEY STORAGE
+// ============================================================
+const STORAGE_KEY = 'glowBeautyData';
 
+// ============================================================
+// DATA DEFAULT
+// ============================================================
+const defaultData = {
+    categories: ['Skincare', 'Makeup', 'Body Care', 'Hair Care'],
+    products: [
+        { id: 1, nama: 'Serum Vitamin C', harga: 'Rp 85.000', kategori: 'Skincare', gambar: 'https://via.placeholder.com/150/d81b60/ffffff?text=Serum' },
+        { id: 2, nama: 'Moisturizer Glow', harga: 'Rp 65.000', kategori: 'Skincare', gambar: 'https://via.placeholder.com/150/ad1457/ffffff?text=Moist' },
+        { id: 3, nama: 'Lipstick Matte', harga: 'Rp 45.000', kategori: 'Makeup', gambar: 'https://via.placeholder.com/150/880e4f/ffffff?text=Lipstick' },
+        { id: 4, nama: 'Body Lotion', harga: 'Rp 55.000', kategori: 'Body Care', gambar: 'https://via.placeholder.com/150/d81b60/ffffff?text=Lotion' },
+        { id: 5, nama: 'Shampoo Keratin', harga: 'Rp 70.000', kategori: 'Hair Care', gambar: 'https://via.placeholder.com/150/ad1457/ffffff?text=Shampoo' },
+        { id: 6, nama: 'Sunscreen SPF 50', harga: 'Rp 75.000', kategori: 'Skincare', gambar: 'https://via.placeholder.com/150/880e4f/ffffff?text=Sunscreen' }
+    ],
+    nextId: 7,
+    testimonials: [
+        { id: 1, nama: 'Sarah, 26', text: 'Kulitku jadi glowing setelah pakai serum ini. Sudah repeat order 3x!', rating: 5, gambar: '' },
+        { id: 2, nama: 'Mika, 30', text: 'Produk original, hasilnya nyata. Makin percaya diri sekarang!', rating: 5, gambar: '' },
+        { id: 3, nama: 'Rina, 24', text: 'Rekomendasi dari teman, ternyata bagus banget. Skincare favorit!', rating: 5, gambar: '' }
+    ],
+    nextTestimonialId: 4,
+    webSettings: {
+        namaToko: 'GlowBeauty',
+        heroTitle: 'Rawat Kulitmu <br/><span>Dengan Produk Terbaik</span>',
+        heroDesc: 'Temukan rangkaian skincare dan kecantikan premium untuk kulit glowing dan sehat. Aman, halal, dan teruji dermatologis.',
+        ctaTitle: '<i class="fas fa-heart" style="color:#f8bbd0;"></i> Siap Glowing?',
+        ctaDesc: 'Konsultasikan kebutuhan kulitmu dan dapatkan rekomendasi produk terbaik!',
+        whatsapp: '6281234567890',
+        heroImage: 'https://via.placeholder.com/500x400/d81b60/ffffff?text=Glow+Beauty'
+    }
+};
+
+// ============================================================
+// STATE
+// ============================================================
+let categories = [];
+let products = [];
+let testimonials = [];
+let nextId = 1;
+let nextTestimonialId = 1;
+let webSettings = {};
+let isLoggedIn = false;
+
+// ============================================================
+// PASSWORD MANAGEMENT
+// ============================================================
+function getPassword() {
+    const saved = localStorage.getItem('adminPassword');
+    return saved || 'istiireng123';
+}
+
+function setPassword(newPass) {
+    localStorage.setItem('adminPassword', newPass);
+}
+
+function ubahPassword() {
+    if (!isLoggedIn) {
+        alert('⚠️ Login terlebih dahulu!');
+        openLogin();
+        return;
+    }
+
+    const passwordLama = prompt('Masukkan password lama:');
+    if (passwordLama !== getPassword()) {
+        alert('❌ Password lama salah!');
+        return;
+    }
+
+    const passwordBaru = prompt('Masukkan password baru (minimal 6 karakter):');
+    if (!passwordBaru || passwordBaru.length < 6) {
+        alert('❌ Password minimal 6 karakter!');
+        return;
+    }
+
+    const konfirmasi = prompt('Konfirmasi password baru:');
+    if (passwordBaru !== konfirmasi) {
+        alert('❌ Password tidak cocok!');
+        return;
+    }
+
+    setPassword(passwordBaru);
+    alert('✅ Password berhasil diubah!');
+}
+
+// ============================================================
+// LOAD & SAVE DATA
+// ============================================================
+function loadData() {
+    try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            const data = JSON.parse(saved);
+            categories = data.categories || defaultData.categories;
+            products = data.products || defaultData.products;
+            testimonials = data.testimonials || defaultData.testimonials;
+            nextId = data.nextId || defaultData.nextId;
+            nextTestimonialId = data.nextTestimonialId || defaultData.nextTestimonialId;
+            webSettings = data.webSettings || defaultData.webSettings;
+            console.log('✅ Data loaded from LocalStorage:', products.length, 'products,', testimonials.length, 'testimonials');
+            return true;
+        }
+    } catch (e) {
+        console.warn('⚠️ Failed to load from LocalStorage:', e);
+    }
+    categories = [...defaultData.categories];
+    products = JSON.parse(JSON.stringify(defaultData.products));
+    testimonials = JSON.parse(JSON.stringify(defaultData.testimonials));
+    nextId = defaultData.nextId;
+    nextTestimonialId = defaultData.nextTestimonialId;
+    webSettings = JSON.parse(JSON.stringify(defaultData.webSettings));
+    saveData();
+    return false;
+}
+
+function saveData() {
+    try {
+        const data = { categories, products, nextId, testimonials, nextTestimonialId, webSettings };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        console.log('✅ Data saved to LocalStorage');
+        updateStorageCount();
+    } catch (e) {
+        console.warn('⚠️ Failed to save to LocalStorage:', e);
+        alert('⚠️ Gagal menyimpan data! Kapasitas storage mungkin penuh.');
+    }
+}
+
+function updateStorageCount() {
+    const el = document.getElementById('storageCount');
+    if (el) el.textContent = products.length;
+}
+
+// ============================================================
+// RESET & BACKUP
+// ============================================================
+function resetAllData() {
+    if (!confirm('⚠️ Yakin ingin menghapus SEMUA data? Ini tidak bisa dibatalkan!')) return;
+    if (!confirm('Konfirmasi kedua: Hapus semua data?')) return;
+
+    categories = [...defaultData.categories];
+    products = JSON.parse(JSON.stringify(defaultData.products));
+    testimonials = JSON.parse(JSON.stringify(defaultData.testimonials));
+    nextId = defaultData.nextId;
+    nextTestimonialId = defaultData.nextTestimonialId;
+    webSettings = JSON.parse(JSON.stringify(defaultData.webSettings));
+    saveData();
+    renderAll();
+    applyWebSettings();
+    alert('🗑️ Semua data telah direset ke default!');
+}
+
+function exportData() {
+    const data = { categories, products, nextId, testimonials, nextTestimonialId, webSettings, exportedAt: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `glow-beauty-backup-${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    alert('✅ Data berhasil diekspor!');
+}
+
+function importData(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (data.categories && data.products) {
+                categories = data.categories;
+                products = data.products;
+                testimonials = data.testimonials || [];
+                nextId = data.nextId || products.length + 1;
+                nextTestimonialId = data.nextTestimonialId || testimonials.length + 1;
+                webSettings = data.webSettings || defaultData.webSettings;
+                saveData();
+                renderAll();
+                applyWebSettings();
+                alert('✅ Data berhasil di-restore!');
+            } else {
+                alert('⚠️ File backup tidak valid!');
+            }
+        } catch (err) {
+            alert('⚠️ Gagal membaca file backup!');
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+}
+
+// ============================================================
+// LOGIN
+// ============================================================
+function openLogin() {
+    if (isLoggedIn) {
+        toggleAdmin();
+        return;
+    }
+    document.getElementById('loginModal').classList.add('active');
+    document.getElementById('loginError').classList.remove('show');
+}
+
+function closeLogin() {
+    document.getElementById('loginModal').classList.remove('active');
+}
+
+function login() {
+    const user = document.getElementById('loginUser').value.trim();
+    const pass = document.getElementById('loginPass').value.trim();
+
+    if (user === 'istimar' && pass === getPassword()) {
+        isLoggedIn = true;
+        closeLogin();
+        document.querySelector('.admin-toggle').innerHTML = '<i class="fas fa-user-shield"></i> Admin';
+        document.querySelector('.admin-toggle').style.background = 'rgba(216,27,96,0.2)';
+        toggleAdmin();
+        renderAll();
+        applyWebSettings();
+    } else {
+        document.getElementById('loginError').classList.add('show');
+    }
+}
+
+function logout() {
+    isLoggedIn = false;
+    document.getElementById('adminPanel').classList.remove('active');
+    document.querySelector('.admin-toggle').innerHTML = '<i class="fas fa-user-shield"></i> Admin';
+    document.querySelector('.admin-toggle').style.background = 'rgba(216,27,96,0.12)';
+}
+
+// ============================================================
+// TOGGLE ADMIN & TAB
+// ============================================================
+function toggleAdmin() {
+    if (!isLoggedIn) {
+        openLogin();
+        return;
+    }
+    const panel = document.getElementById('adminPanel');
+    panel.classList.toggle('active');
+    if (panel.classList.contains('active')) {
+        renderAll();
+        applyWebSettings();
+    }
+}
+
+function switchTab(tab) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    document.querySelector(`.tab-btn[onclick="switchTab('${tab}')"]`).classList.add('active');
+}
+
+// ============================================================
+// RENDER KATEGORI
+// ============================================================
+function renderCategories() {
+    const display = document.getElementById('kategoriDisplay');
+    display.innerHTML = categories.map(k => `
+        <div class="card-kategori">
+            <i class="fas fa-tag"></i>
+            <h3>${k}</h3>
+        </div>
+    `).join('');
+
+    const chips = document.getElementById('kategoriChips');
+    chips.innerHTML = categories.map(k => `
+        <span class="kategori-chip">
+            ${k}
+            <span class="chip-edit" onclick="editKategori('${k}')" title="Edit"><i class="fas fa-pen"></i></span>
+            <span class="chip-delete" onclick="hapusKategori('${k}')" title="Hapus"><i class="fas fa-times"></i></span>
+        </span>
+    `).join('');
+
+    const select = document.getElementById('produkKategori');
+    const currentVal = select.value;
+    select.innerHTML = categories.map(k => `
+        <option value="${k}" ${k === currentVal ? 'selected' : ''}>${k}</option>
+    `).join('');
+}
+
+// ============================================================
+// MANAJEMEN KATEGORI
+// ============================================================
+function tambahKategori() {
+    const input = document.getElementById('kategoriInput');
+    const nama = input.value.trim();
+    if (!nama) { alert('⚠️ Masukkan nama kategori!'); return; }
+    if (categories.includes(nama)) { alert('⚠️ Kategori sudah ada!'); return; }
+    categories.push(nama);
+    input.value = '';
+    saveData();
+    renderAll();
+    alert('✅ Kategori berhasil ditambahkan!');
+}
+
+function hapusKategori(nama) {
+    if (!confirm(`Yakin hapus kategori "${nama}"?`)) return;
+    const used = products.some(p => p.kategori === nama);
+    if (used) {
+        alert('⚠️ Kategori ini masih digunakan oleh produk! Hapus produknya terlebih dahulu.');
+        return;
+    }
+    categories = categories.filter(k => k !== nama);
+    saveData();
+    renderAll();
+    alert('🗑️ Kategori dihapus!');
+}
+
+function editKategori(namaLama) {
+    const namaBaru = prompt('Edit nama kategori:', namaLama);
+    if (!namaBaru || namaBaru === namaLama) return;
+    if (categories.includes(namaBaru) && namaBaru !== namaLama) {
+        alert('⚠️ Nama kategori sudah ada!');
+        return;
+    }
+    products = products.map(p => {
+        if (p.kategori === namaLama) return { ...p, kategori: namaBaru };
+        return p;
+    });
+    categories = categories.map(k => k === namaLama ? namaBaru : k);
+    saveData();
+    renderAll();
+    alert('✅ Kategori berhasil diupdate!');
+}
+
+// ============================================================
+// RENDER PRODUK
+// ============================================================
+function renderProducts() {
+    const grid = document.getElementById('productGrid');
+    const tbody = document.getElementById('productTableBody');
+    const totalSpan = document.getElementById('totalProduk');
+
+    grid.innerHTML = products.map(p => `
+        <div class="card-produk">
+            <div class="img-wrapper">
+                <img src="${p.gambar}" alt="${p.nama}" onerror="this.src='https://via.placeholder.com/150/d81b60/ffffff?text=${encodeURIComponent(p.nama)}'" />
+            </div>
+            <h4>${p.nama}</h4>
+            <div class="harga">${p.harga}</div>
+            <span class="kategori-badge">${p.kategori}</span>
+        </div>
+    `).join('');
+
+    tbody.innerHTML = products.map((p, index) => `
+        <tr>
+            <td>${index + 1}</td>
+            <td><img src="${p.gambar}" style="width:40px;height:40px;object-fit:cover;border-radius:10px;" onerror="this.src='https://via.placeholder.com/40/d81b60/ffffff'" /></td>
+            <td>${p.nama}</td>
+            <td>${p.harga}</td>
+            <td>${p.kategori}</td>
+            <td>
+                <button class="btn-edit" onclick="editProduk(${p.id})"><i class="fas fa-edit"></i> Edit</button>
+                <button class="btn-delete" onclick="hapusProduk(${p.id})"><i class="fas fa-trash"></i> Hapus</button>
+            </td>
+        </tr>
+    `).join('');
+
+    totalSpan.textContent = products.length;
+    updateStorageCount();
+}
+
+// ============================================================
+// TAMBAH PRODUK
+// ============================================================
+function tambahProduk() {
+    if (!isLoggedIn) {
+        alert('⚠️ Login terlebih dahulu!');
+        openLogin();
+        return;
+    }
+
+    const nama = document.getElementById('produkNama').value.trim();
+    const harga = document.getElementById('produkHarga').value.trim();
+    const kategori = document.getElementById('produkKategori').value;
+    const fileInput = document.getElementById('produkGambar');
+
+    if (!nama || !harga) {
+        alert('⚠️ Mohon isi Nama dan Harga produk!');
+        return;
+    }
+
+    let gambar = 'https://via.placeholder.com/150/d81b60/ffffff?text=Produk';
+
+    if (fileInput.files && fileInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            gambar = e.target.result;
+            const newProduct = { id: nextId++, nama, harga, kategori, gambar };
+            products.push(newProduct);
+            saveData();
+            renderAll();
+            resetFormProduk();
+            alert('✅ Produk berhasil ditambahkan!');
+        };
+        reader.readAsDataURL(fileInput.files[0]);
+    } else {
+        const newProduct = { id: nextId++, nama, harga, kategori, gambar };
+        products.push(newProduct);
+        saveData();
+        renderAll();
+        resetFormProduk();
+        alert('✅ Produk berhasil ditambahkan!');
+    }
+}
+
+// ============================================================
+// EDIT PRODUK
+// ============================================================
+function editProduk(id) {
+    if (!isLoggedIn) {
+        alert('⚠️ Login terlebih dahulu!');
+        openLogin();
+        return;
+    }
+
+    const produk = products.find(p => p.id === id);
+    if (!produk) {
+        alert('⚠️ Produk tidak ditemukan!');
+        return;
+    }
+
+    document.getElementById('editId').value = id;
+    document.getElementById('editNama').value = produk.nama;
+    document.getElementById('editHarga').value = produk.harga;
+
+    const select = document.getElementById('editKategori');
+    select.innerHTML = categories.map(k => `
+        <option value="${k}" ${k === produk.kategori ? 'selected' : ''}>${k}</option>
+    `).join('');
+
+    document.getElementById('editGambar').value = '';
+    document.getElementById('editModal').classList.add('active');
+}
+
+function closeEdit() {
+    document.getElementById('editModal').classList.remove('active');
+    document.getElementById('editGambar').value = '';
+}
+
+function simpanEdit() {
+    const id = parseInt(document.getElementById('editId').value);
+    const nama = document.getElementById('editNama').value.trim();
+    const harga = document.getElementById('editHarga').value.trim();
+    const kategori = document.getElementById('editKategori').value;
+    const fileInput = document.getElementById('editGambar');
+
+    if (!nama || !harga) {
+        alert('⚠️ Nama dan Harga harus diisi!');
+        return;
+    }
+
+    const index = products.findIndex(p => p.id === id);
+    if (index === -1) {
+        alert('⚠️ Produk tidak ditemukan!');
+        return;
+    }
+
+    function simpanData(gambarBaru) {
+        products[index] = {
+            ...products[index],
+            nama: nama,
+            harga: harga,
+            kategori: kategori,
+            gambar: gambarBaru || products[index].gambar
+        };
+        saveData();
+        renderAll();
+        closeEdit();
+        alert('✅ Produk berhasil diupdate!');
+    }
+
+    if (fileInput.files && fileInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            simpanData(e.target.result);
+        };
+        reader.readAsDataURL(fileInput.files[0]);
+    } else {
+        simpanData(null);
+    }
+}
+
+// ============================================================
+// HAPUS PRODUK
+// ============================================================
+function hapusProduk(id) {
+    if (!isLoggedIn) {
+        alert('⚠️ Login terlebih dahulu!');
+        openLogin();
+        return;
+    }
+    if (confirm('Yakin ingin menghapus produk ini?')) {
+        products = products.filter(p => p.id !== id);
+        saveData();
+        renderAll();
+        alert('🗑️ Produk dihapus!');
+    }
+}
+
+function resetFormProduk() {
+    document.getElementById('produkNama').value = '';
+    document.getElementById('produkHarga').value = '';
+    document.getElementById('produkGambar').value = '';
+}
+
+// ============================================================
+// RENDER TESTIMONI
+// ============================================================
+function renderTestimonials() {
+    // Display di halaman utama
+    const grid = document.getElementById('testimoniGrid');
+    grid.innerHTML = testimonials.map(t => `
+        <div class="card-testimoni">
+            <div class="stars">${'⭐'.repeat(t.rating)}</div>
+            ${t.gambar ? `<img src="${t.gambar}" class="testi-image" alt="Screenshot" />` : ''}
+            <p>"${t.text}"</p>
+            <div class="nama">- ${t.nama}</div>
+        </div>
+    `).join('');
+
+    // List di admin
+    const list = document.getElementById('testimoniList');
+    if (testimonials.length === 0) {
+        list.innerHTML = '<p style="color:#6a4a5a;text-align:center;padding:20px;">Belum ada testimoni. Tambahkan testimoni pertama!</p>';
+        return;
+    }
+    list.innerHTML = testimonials.map(t => `
+        <div class="testimoni-item">
+            <div class="info">
+                ${t.gambar ? `<img src="${t.gambar}" alt="Screenshot" />` : '<div style="width:50px;height:50px;border-radius:12px;background:rgba(216,27,96,0.1);display:flex;align-items:center;justify-content:center;font-size:1.5rem;"><i class="fas fa-user" style="color:#d81b60;"></i></div>'}
+                <div class="text">
+                    <div class="nama">${t.nama}</div>
+                    <div class="rating">${'⭐'.repeat(t.rating)}</div>
+                    <div class="isi">"${t.text}"</div>
+                </div>
+            </div>
+            <div class="aksi">
+                <button class="btn-edit-testi" onclick="editTestimoni(${t.id})"><i class="fas fa-edit"></i> Edit</button>
+                <button class="btn-delete-testi" onclick="hapusTestimoni(${t.id})"><i class="fas fa-trash"></i> Hapus</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+// ============================================================
+// TAMBAH TESTIMONI
+// ============================================================
+function tambahTestimoni() {
+    if (!isLoggedIn) {
+        alert('⚠️ Login terlebih dahulu!');
+        openLogin();
+        return;
+    }
+
+    const nama = document.getElementById('testimoniNama').value.trim();
+    const text = document.getElementById('testimoniText').value.trim();
+    const rating = parseInt(document.getElementById('testimoniRating').value);
+    const fileInput = document.getElementById('testimoniGambar');
+
+    if (!nama || !text) {
+        alert('⚠️ Mohon isi Nama dan Isi testimoni!');
+        return;
+    }
+
+    let gambar = '';
+
+    if (fileInput.files && fileInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            gambar = e.target.result;
+            const newTestimonial = { id: nextTestimonialId++, nama, text, rating, gambar };
+            testimonials.push(newTestimonial);
+            saveData();
+            renderAll();
+            resetFormTestimoni();
+            alert('✅ Testimoni berhasil ditambahkan!');
+        };
+        reader.readAsDataURL(fileInput.files[0]);
+    } else {
+        const newTestimonial = { id: nextTestimonialId++, nama, text, rating, gambar: '' };
+        testimonials.push(newTestimonial);
+        saveData();
+        renderAll();
+        resetFormTestimoni();
+        alert('✅ Testimoni berhasil ditambahkan!');
+    }
+}
+
+// ============================================================
+// EDIT TESTIMONI
+// ============================================================
+function editTestimoni(id) {
+    if (!isLoggedIn) {
+        alert('⚠️ Login terlebih dahulu!');
+        openLogin();
+        return;
+    }
+
+    const testi = testimonials.find(t => t.id === id);
+    if (!testi) {
+        alert('⚠️ Testimoni tidak ditemukan!');
+        return;
+    }
+
+    document.getElementById('editTestimoniId').value = id;
+    document.getElementById('editTestimoniNama').value = testi.nama;
+    document.getElementById('editTestimoniText').value = testi.text;
+    document.getElementById('editTestimoniRating').value = testi.rating;
+    document.getElementById('editTestimoniGambar').value = '';
+    document.getElementById('editTestimoniModal').classList.add('active');
+}
+
+function closeEditTestimoni() {
+    document.getElementById('editTestimoniModal').classList.remove('active');
+    document.getElementById('editTestimoniGambar').value = '';
+}
+
+function simpanEditTestimoni() {
+    const id = parseInt(document.getElementById('editTestimoniId').value);
+    const nama = document.getElementById('editTestimoniNama').value.trim();
+    const text = document.getElementById('editTestimoniText').value.trim();
+    const rating = parseInt(document.getElementById('editTestimoniRating').value);
+    const fileInput = document.getElementById('editTestimoniGambar');
+
+    if (!nama || !text) {
+        alert('⚠️ Nama dan Isi testimoni harus diisi!');
+        return;
+    }
+
+    const index = testimonials.findIndex(t => t.id === id);
+    if (index === -1) {
+        alert('⚠️ Testimoni tidak ditemukan!');
+        return;
+    }
+
+    function simpanData(gambarBaru) {
+        testimonials[index] = {
+            ...testimonials[index],
+            nama: nama,
+            text: text,
+            rating: rating,
+            gambar: gambarBaru !== undefined ? gambarBaru : testimonials[index].gambar
+        };
+        saveData();
+        renderAll();
+        closeEditTestimoni();
+        alert('✅ Testimoni berhasil diupdate!');
+    }
+
+    if (fileInput.files && fileInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            simpanData(e.target.result);
+        };
+        reader.readAsDataURL(fileInput.files[0]);
+    } else {
+        simpanData(undefined);
+    }
+}
+
+// ============================================================
+// HAPUS TESTIMONI
+// ============================================================
+function hapusTestimoni(id) {
+    if (!isLoggedIn) {
+        alert('⚠️ Login terlebih dahulu!');
+        openLogin();
+        return;
+    }
+    if (confirm('Yakin ingin menghapus testimoni ini?')) {
+        testimonials = testimonials.filter(t => t.id !== id);
+        saveData();
+        renderAll();
+        alert('🗑️ Testimoni dihapus!');
+    }
+}
+
+function resetFormTestimoni() {
+    document.getElementById('testimoniNama').value = '';
+    document.getElementById('testimoniText').value = '';
+    document.getElementById('testimoniRating').value = '5';
+    document.getElementById('testimoniGambar').value = '';
+}
+
+// ============================================================
+// PENGATURAN WEB
+// ============================================================
+function applyWebSettings() {
+    if (webSettings.namaToko) {
+        document.getElementById('webName').innerHTML = webSettings.namaToko.replace(/<[^>]*>/g, '');
+        document.getElementById('footerName').textContent = webSettings.namaToko;
+    }
+    if (webSettings.heroTitle) {
+        document.getElementById('heroTitle').innerHTML = webSettings.heroTitle;
+    }
+    if (webSettings.heroDesc) {
+        document.getElementById('heroDesc').textContent = webSettings.heroDesc;
+    }
+    if (webSettings.heroImage) {
+        document.getElementById('heroImage').src = webSettings.heroImage;
+    }
+    if (webSettings.ctaTitle) {
+        document.getElementById('ctaTitle').innerHTML = webSettings.ctaTitle;
+    }
+    if (webSettings.ctaDesc) {
+        document.getElementById('ctaDesc').textContent = webSettings.ctaDesc;
+    }
+    if (webSettings.whatsapp) {
+        const waNumber = webSettings.whatsapp.replace(/\D/g, '');
+        const waLink = document.getElementById('waLink');
+        if (waLink) {
+            waLink.href = `https://wa.me/${waNumber}?text=Halo%20saya%20ingin%20konsultasi%20skincare`;
+        }
+    }
+
+    document.getElementById('webNamaToko').value = webSettings.namaToko || '';
+    document.getElementById('webHeroTitle').value = webSettings.heroTitle || '';
+    document.getElementById('webHeroDesc').value = webSettings.heroDesc || '';
+    document.getElementById('webCtaTitle').value = webSettings.ctaTitle || '';
+    document.getElementById('webCtaDesc').value = webSettings.ctaDesc || '';
+    document.getElementById('webWhatsApp').value = webSettings.whatsapp || '';
+}
+
+function simpanPengaturanWeb() {
+    if (!isLoggedIn) {
+        alert('⚠️ Login terlebih dahulu!');
+        openLogin();
+        return;
+    }
+
+    const namaToko = document.getElementById('webNamaToko').value.trim();
+    const heroTitle = document.getElementById('webHeroTitle').value.trim();
+    const heroDesc = document.getElementById('webHeroDesc').value.trim();
+    const ctaTitle = document.getElementById('webCtaTitle').value.trim();
+    const ctaDesc = document.getElementById('webCtaDesc').value.trim();
+    const whatsapp = document.getElementById('webWhatsApp').value.trim();
+    const fileInput = document.getElementById('webHeroImage');
+
+    if (!namaToko) {
+        alert('⚠️ Nama Toko harus diisi!');
+        return;
+    }
+
+    function simpanWeb(gambarBaru) {
+        webSettings.namaToko = namaToko;
+        webSettings.heroTitle = heroTitle || defaultData.webSettings.heroTitle;
+        webSettings.heroDesc = heroDesc || defaultData.webSettings.heroDesc;
+        webSettings.ctaTitle = ctaTitle || defaultData.webSettings.ctaTitle;
+        webSettings.ctaDesc = ctaDesc || defaultData.webSettings.ctaDesc;
+        webSettings.whatsapp = whatsapp || defaultData.webSettings.whatsapp;
+        if (gambarBaru) {
+            webSettings.heroImage = gambarBaru;
+        }
+        saveData();
+        applyWebSettings();
+        alert('✅ Pengaturan web berhasil disimpan!');
+    }
+
+    if (fileInput.files && fileInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            simpanWeb(e.target.result);
+        };
+        reader.readAsDataURL(fileInput.files[0]);
+    } else {
+        simpanWeb(null);
+    }
+}
+
+// ============================================================
+// RENDER ALL
+// ============================================================
+function renderAll() {
+    renderCategories();
+    renderProducts();
+    renderTestimonials();
+}
+
+// ============================================================
+// INIT
+// ============================================================
+loadData();
+renderAll();
+applyWebSettings();
+
+// ============================================================
+// MODAL CLOSE ON OUTSIDE CLICK
+// ============================================================
+document.getElementById('loginModal').addEventListener('click', function(e) {
+    if (e.target === this) closeLogin();
+});
+
+document.getElementById('editModal').addEventListener('click', function(e) {
+    if (e.target === this) closeEdit();
+});
+
+document.getElementById('editTestimoniModal').addEventListener('click', function(e) {
+    if (e.target === this) closeEditTestimoni();
+});
+
+// ============================================================
+// ENTER KEY HANDLERS
+// ============================================================
+document.getElementById('loginPass').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') login();
+});
+document.getElementById('loginUser').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') login();
+});
+document.getElementById('kategoriInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') tambahKategori();
+});
