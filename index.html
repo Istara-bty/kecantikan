@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Wabil Beauty - Skincare & Kecantikan</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" />
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header>
+    <div class="container header-content">
+        <div class="logo">
+            <i class="fas fa-spa"></i>
+            <span id="webName">Wabil<span style="color:#d81b60;">Beauty</span></span>
+        </div>
+        <nav class="nav-links">
+            <a href="#home"><i class="fas fa-home"></i> Beranda</a>
+            <a href="#produk"><i class="fas fa-box"></i> Produk</a>
+            <a href="#keunggulan"><i class="fas fa-star"></i> Keunggulan</a>
+            <a href="#testimoni"><i class="fas fa-comment"></i> Testimoni</a>
+            <a href="#kontak" class="btn-wa"><i class="fab fa-whatsapp"></i> Hubungi</a>
+            <a href="https://www.instagram.com/istara3025?igsh=cjA2Zm94czBibDdj" target="_blank" class="btn-ig"><i class="fab fa-instagram"></i> Instagram</a>
+            <span class="admin-toggle" onclick="openLogin()"><i class="fas fa-user-shield"></i> Admin</span>
+            <span class="storage-info"><i class="fas fa-database"></i> <span id="storageCount">0</span> produk</span>
+        </nav>
+    </div>
+</header>
+
+<!-- ===== LOGIN MODAL ===== -->
+<div class="modal-overlay" id="loginModal">
+    <div class="modal-login">
+        <h2><i class="fas fa-lock" style="color:#d81b60;"></i> Admin Login</h2>
+        <p>Masukkan username dan password untuk mengelola</p>
+        <div class="form-group">
+            <label><i class="fas fa-user"></i> Username</label>
+            <input type="text" id="loginUser" placeholder="" value="" />
+        </div>
+        <div class="form-group">
+            <label><i class="fas fa-key"></i> Password</label>
+            <input type="password" id="loginPass" placeholder="" value="" />
+        </div>
+        <button class="btn-login" onclick="login()"><i class="fas fa-sign-in-alt"></i> Login</button>
+        <div class="error-msg" id="loginError">❌ Username atau password salah!</div>
+        <p style="margin-top:14px;font-size:0.8rem;color:#999;">
+            <i class="fas fa-info-circle"></i> Default: admin / admin123
+        </p>
+    </div>
+</div>
+
+<!-- ===== MODAL EDIT PRODUK ===== -->
+<div class="modal-overlay" id="editModal">
+    <div class="modal-login" style="max-width:500px;">
+        <h2><i class="fas fa-edit" style="color:#d81b60;"></i> Edit Produk</h2>
+        <p>Ubah data produk yang sudah ada</p>
+        <input type="hidden" id="editId" />
+        
+        <div class="form-group">
+            <label><i class="fas fa-tag"></i> Nama Produk</label>
+            <input type="text" id="editNama" placeholder="Nama produk" />
+        </div>
+        
+        <div class="form-group">
+            <label><i class="fas fa-money-bill-wave"></i> Harga</label>
+            <input type="text" id="editHarga" placeholder="Contoh: Rp 85.000" />
+        </div>
+        
+        <div class="form-group">
+            <label><i class="fas fa-folder"></i> Kategori</label>
+            <select id="editKategori"></select>
+        </div>
+        
+        <div class="form-group">
+            <label><i class="fas fa-image"></i> Ganti Gambar (opsional)</label>
+            <input type="file" id="editGambar" accept="image/*" />
+            <div style="margin-top:6px;font-size:0.8rem;color:#6a4a5a;">
+                <i class="fas fa-info-circle"></i> Kosongkan jika tidak ingin mengganti gambar
+            </div>
+        </div>
+        
+        <div style="display:flex;gap:10px;margin-top:16px;">
+            <button class="btn-login" onclick="simpanEdit()" style="flex:1;">
+                <i class="fas fa-save"></i> Simpan
+            </button>
+            <button class="btn-admin-outline" onclick="closeEdit()" style="flex:1;text-align:center;">
+                <i class="fas fa-times"></i> Batal
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL EDIT TESTIMONI ===== -->
+<div class="modal-overlay" id="editTestimoniModal">
+    <div class="modal-login" style="max-width:500px;">
+        <h2><i class="fas fa-edit" style="color:#d81b60;"></i> Edit Testimoni</h2>
+        <p>Ubah data testimoni</p>
+        <input type="hidden" id="editTestimoniId" />
+        
+        <div class="form-group">
+            <label><i class="fas fa-user"></i> Nama Pelanggan</label>
+            <input type="text" id="editTestimoniNama" placeholder="Nama pelanggan" />
+        </div>
+        
+        <div class="form-group">
+            <label><i class="fas fa-comment"></i> Isi Testimoni</label>
+            <textarea id="editTestimoniText" rows="3" placeholder="Isi testimoni..."></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label><i class="fas fa-star"></i> Rating (1-5)</label>
+            <select id="editTestimoniRating">
+                <option value="5">⭐⭐⭐⭐⭐ (5)</option>
+                <option value="4">⭐⭐⭐⭐ (4)</option>
+                <option value="3">⭐⭐⭐ (3)</option>
+                <option value="2">⭐⭐ (2)</option>
+                <option value="1">⭐ (1)</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label><i class="fas fa-image"></i> Ganti Screenshot (opsional)</label>
+            <input type="file" id="editTestimoniGambar" accept="image/*" />
+            <div style="margin-top:6px;font-size:0.8rem;color:#6a4a5a;">
+                <i class="fas fa-info-circle"></i> Upload screenshot chat WA
+            </div>
+        </div>
+        
+        <div style="display:flex;gap:10px;margin-top:16px;">
+            <button class="btn-login" onclick="simpanEditTestimoni()" style="flex:1;">
+                <i class="fas fa-save"></i> Simpan
+            </button>
+            <button class="btn-admin-outline" onclick="closeEditTestimoni()" style="flex:1;text-align:center;">
+                <i class="fas fa-times"></i> Batal
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== ADMIN PANEL ===== -->
+<div class="container">
+    <div class="admin-panel" id="adminPanel">
+        <div class="admin-header">
+            <h3><i class="fas fa-crown"></i> Panel Admin</h3>
+            <div>
+                <button class="btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                <button class="btn-ubah-password" onclick="ubahPassword()"><i class="fas fa-key"></i> Ganti Password</button>
+                <button class="btn-reset" onclick="resetAllData()"><i class="fas fa-trash"></i> Reset</button>
+                <button class="btn-export" onclick="exportData()"><i class="fas fa-download"></i> Backup</button>
+                <button class="btn-import" onclick="document.getElementById('importFile').click()">
+                    <i class="fas fa-upload"></i> Restore
+                </button>
+                <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importData(event)" />
+            </div>
+        </div>
+
+        <!-- ===== TAB NAVIGATION ===== -->
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="switchTab('produk')">
+                <i class="fas fa-box"></i> Produk
+            </button>
+            <button class="tab-btn" onclick="switchTab('kategori')">
+                <i class="fas fa-tags"></i> Kategori
+            </button>
+            <button class="tab-btn" onclick="switchTab('testimoni')">
+                <i class="fas fa-comment-dots"></i> Testimoni
+            </button>
+            <button class="tab-btn" onclick="switchTab('web')">
+                <i class="fas fa-globe"></i> Pengaturan Web
+            </button>
+        </div>
+
+        <!-- ===== TAB PRODUK ===== -->
+        <div class="tab-content active" id="tab-produk">
+            <div class="admin-grid">
+                <div class="admin-form-group">
+                    <label><i class="fas fa-tag"></i> Nama Produk</label>
+                    <input type="text" id="produkNama" placeholder="Contoh: Serum Vitamin C" />
+                    <label><i class="fas fa-money-bill-wave"></i> Harga</label>
+                    <input type="text" id="produkHarga" placeholder="Contoh: Rp 85.000" />
+                    <label><i class="fas fa-folder"></i> Kategori</label>
+                    <select id="produkKategori"></select>
+                </div>
+                <div class="admin-form-group">
+                    <label><i class="fas fa-image"></i> Upload Gambar</label>
+                    <input type="file" id="produkGambar" accept="image/*" />
+                    <button class="btn-admin" onclick="tambahProduk()"><i class="fas fa-plus-circle"></i> Tambah Produk</button>
+                    <button class="btn-admin-outline" onclick="resetFormProduk()"><i class="fas fa-undo"></i> Reset</button>
+                </div>
+                <div class="admin-section admin-product-list">
+                    <h4><i class="fas fa-list"></i> Daftar Produk</h4>
+                    <div id="productTableWrapper">
+                        <table>
+                            <thead><tr><th>#</th><th>Gambar</th><th>Nama</th><th>Harga</th><th>Kategori</th><th>Aksi</th></tr></thead>
+                            <tbody id="productTableBody"></tbody>
+                        </table>
+                    </div>
+                    <p><i class="fas fa-database"></i> Total: <span id="totalProduk">0</span> produk</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== TAB KATEGORI ===== -->
+        <div class="tab-content" id="tab-kategori">
+            <div style="max-width:600px;margin:0 auto;">
+                <h4 style="color:#4a1a3a;margin-bottom:16px;">
+                    <i class="fas fa-tags" style="color:#d81b60;"></i> Kelola Kategori
+                </h4>
+                <div class="kategori-input-group">
+                    <input type="text" id="kategoriInput" placeholder="Nama kategori baru..." />
+                    <button class="btn-kategori" onclick="tambahKategori()"><i class="fas fa-plus"></i> Tambah</button>
+                </div>
+                <div class="kategori-chips" id="kategoriChips"></div>
+            </div>
+        </div>
+
+        <!-- ===== TAB TESTIMONI ===== -->
+        <div class="tab-content" id="tab-testimoni">
+            <div style="max-width:800px;margin:0 auto;">
+                <h4 style="color:#4a1a3a;margin-bottom:16px;">
+                    <i class="fas fa-comment-dots" style="color:#d81b60;"></i> Kelola Testimoni
+                </h4>
+                
+                <!-- Form Tambah Testimoni -->
+                <div class="admin-grid" style="margin-bottom:20px;">
+                    <div class="admin-form-group">
+                        <label><i class="fas fa-user"></i> Nama Pelanggan</label>
+                        <input type="text" id="testimoniNama" placeholder="Nama pelanggan" />
+                    </div>
+                    <div class="admin-form-group">
+                        <label><i class="fas fa-star"></i> Rating (1-5)</label>
+                        <select id="testimoniRating">
+                            <option value="5">⭐⭐⭐⭐⭐ (5)</option>
+                            <option value="4">⭐⭐⭐⭐ (4)</option>
+                            <option value="3">⭐⭐⭐ (3)</option>
+                            <option value="2">⭐⭐ (2)</option>
+                            <option value="1">⭐ (1)</option>
+                        </select>
+                    </div>
+                    <div class="admin-form-group" style="grid-column:1/-1;">
+                        <label><i class="fas fa-comment"></i> Isi Testimoni</label>
+                        <textarea id="testimoniText" rows="2" placeholder="Isi testimoni..."></textarea>
+                    </div>
+                    <div class="admin-form-group" style="grid-column:1/-1;">
+                        <label><i class="fas fa-image"></i> Upload Screenshot Chat WA</label>
+                        <input type="file" id="testimoniGambar" accept="image/*" />
+                        <div style="font-size:0.8rem;color:#6a4a5a;">
+                            <i class="fas fa-info-circle"></i> Upload screenshot chat WhatsApp pelanggan
+                        </div>
+                    </div>
+                    <div style="grid-column:1/-1;">
+                        <button class="btn-admin" onclick="tambahTestimoni()"><i class="fas fa-plus-circle"></i> Tambah Testimoni</button>
+                    </div>
+                </div>
+
+                <!-- Daftar Testimoni -->
+                <h4 style="color:#4a1a3a;margin:20px 0 12px;">
+                    <i class="fas fa-list"></i> Daftar Testimoni
+                </h4>
+                <div id="testimoniList"></div>
+            </div>
+        </div>
+
+        <!-- ===== TAB PENGATURAN WEB ===== -->
+        <div class="tab-content" id="tab-web">
+            <div style="max-width:700px;margin:0 auto;">
+                <h4 style="color:#4a1a3a;margin-bottom:16px;">
+                    <i class="fas fa-globe" style="color:#d81b60;"></i> Pengaturan Website
+                </h4>
+                
+                <div class="admin-form-group">
+                    <label><i class="fas fa-store"></i> Nama Toko</label>
+                    <input type="text" id="webNamaToko" placeholder="Nama toko Anda" />
+                </div>
+
+                <div class="admin-form-group">
+                    <label><i class="fas fa-heading"></i> Judul Hero</label>
+                    <input type="text" id="webHeroTitle" placeholder="Judul utama" />
+                </div>
+
+                <div class="admin-form-group">
+                    <label><i class="fas fa-align-left"></i> Deskripsi Hero</label>
+                    <textarea id="webHeroDesc" rows="3" placeholder="Deskripsi toko..."></textarea>
+                </div>
+
+                <div class="admin-form-group">
+                    <label><i class="fas fa-heading"></i> Judul CTA (Call to Action)</label>
+                    <input type="text" id="webCtaTitle" placeholder="Contoh: Siap Glowing?" />
+                </div>
+
+                <div class="admin-form-group">
+                    <label><i class="fas fa-align-left"></i> Deskripsi CTA</label>
+                    <textarea id="webCtaDesc" rows="3" placeholder="Deskripsi CTA..."></textarea>
+                </div>
+
+                <div class="admin-form-group">
+                    <label><i class="fab fa-whatsapp"></i> Nomor WhatsApp</label>
+                    <input type="text" id="webWhatsApp" placeholder="Contoh: 6281234567890" />
+                </div>
+
+                <div class="admin-form-group">
+                    <label><i class="fas fa-image"></i> Gambar Hero (opsional)</label>
+                    <input type="file" id="webHeroImage" accept="image/*" />
+                </div>
+
+                <button class="btn-admin" onclick="simpanPengaturanWeb()" style="width:100%;">
+                    <i class="fas fa-save"></i> Simpan Pengaturan
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== HERO ===== -->
+<section id="home" class="hero">
+    <div class="container hero-grid">
+        <div class="hero-text">
+            <h1 id="heroTitle">Rawat Kulitmu <br/><span>Dengan Produk Terbaik</span></h1>
+            <p id="heroDesc">Temukan rangkaian skincare dan kecantikan premium untuk kulit glowing dan sehat. Aman, halal, dan teruji dermatologis.</p>
+            <a href="#produk" class="btn-cta"><i class="fas fa-shopping-bag"></i> Belanja Sekarang</a>
+        </div>
+        <div class="hero-image">
+            <img id="heroImage" src="https://via.placeholder.com/500x400/d81b60/ffffff?text=Glow+Beauty" alt="Glow Beauty" />
+        </div>
+    </div>
+</section>
+
+<!-- ===== KATEGORI DISPLAY ===== -->
+<div class="container">
+    <h2 class="section-title"><i class="fas fa-th-large"></i> Kategori Produk</h2>
+    <p class="subtitle">Pilih kategori favoritmu untuk tampil maksimal</p>
+    <div class="grid-4" id="kategoriDisplay"></div>
+</div>
+
+<!-- ===== PRODUK ===== -->
+<div class="container" id="produk">
+    <h2 class="section-title"><i class="fas fa-crown"></i> Produk Unggulan</h2>
+    <p class="subtitle">Pilihan terbaik untuk kulitmu, update setiap minggu</p>
+    <div class="grid-produk" id="productGrid"></div>
+</div>
+
+<!-- ===== KEUNGGULAN ===== -->
+<div class="container" id="keunggulan">
+    <h2 class="section-title"><i class="fas fa-medal"></i> Kenapa Wabil Beauty?</h2>
+    <div class="grid-keunggulan">
+        <div class="card-keunggulan"><i class="fas fa-leaf"></i><h4>Bahan Alami</h4><p>Terbuat dari bahan herbal pilihan</p></div>
+        <div class="card-keunggulan"><i class="fas fa-flask"></i><h4>Teruji Klinis</h4><p>Dermatologist tested</p></div>
+        <div class="card-keunggulan"><i class="fas fa-shipping-fast"></i><h4>Pengiriman Cepat</h4><p>Siap antar</p></div>
+        <div class="card-keunggulan"><i class="fas fa-hand-holding-heart"></i><h4>Ramah</h4><p>Bebas Konsultasi</p></div>
+    </div>
+</div>
+
+<!-- ===== TESTIMONI ===== -->
+<div class="container" id="testimoni">
+    <h2 class="section-title"><i class="fas fa-user-check"></i> Testimoni Pelanggan</h2>
+    <p class="subtitle">Apa kata mereka tentang produk kami</p>
+    <div class="testimoni-grid" id="testimoniGrid">
+        <!-- Akan diisi oleh JavaScript -->
+    </div>
+</div>
+
+<!-- ===== CTA ===== -->
+<div class="container" id="kontak">
+    <div class="cta-bottom">
+        <h2 id="ctaTitle"><i class="fas fa-heart" style="color:#f8bbd0;"></i> Siap Glowing?</h2>
+        <p id="ctaDesc">Konsultasikan kebutuhan kulitmu dan dapatkan rekomendasi produk terbaik!</p>
+        <a href="https://wa.me/628179897500?text=Halo%20saya%20ingin%20konsultasi%20skincare" target="_blank" class="btn-cta-light" id="waLink">
+            <i class="fab fa-whatsapp"></i> Chat via WhatsApp
+        </a>
+    </div>
+</div>
+
+<!-- ===== FOOTER ===== -->
+<footer>
+    <div class="container footer-content">
+        <div class="copy">&copy; 2025 <span id="footerName">Glow Beauty</span>. All rights reserved.</div>
+        <div class="social-icons">
+            <a href="https://www.instagram.com/istara3025?igsh=cjA2Zm94czBibDdj" target="_blank" title="Instagram">
+                <i class="fab fa-instagram"></i>
+            </a>
+            <!--<a href="#" target="_blank" title="TikTok">
+                <i class="fab fa-tiktok"></i>
+            </a>
+            <a href="#" target="_blank" title="YouTube">
+                <i class="fab fa-youtube"></i>
+            </a>-->
+        </div>
+    </div>
+</footer>
+
+<!-- ===== JAVASCRIPT ===== -->
+<script src="assets/js/main.js"></script>
+
+</body>
+</html>
