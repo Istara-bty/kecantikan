@@ -89,9 +89,17 @@
         </div>
         
         <div class="form-group">
+            <label><i class="fas fa-link"></i> Link Gambar (Google Drive)</label>
+            <input type="url" id="editLinkGambar" placeholder="https://drive.google.com/uc?export=view&id=..." />
+            <div style="margin-top:4px;font-size:0.8rem;color:#6a4a5a;">
+                <i class="fas fa-info-circle"></i> Paste link dari Google Drive
+            </div>
+        </div>
+        
+        <div class="form-group">
             <label><i class="fas fa-image"></i> Ganti Gambar (opsional)</label>
             <input type="file" id="editGambar" accept="image/*" />
-            <div style="margin-top:6px;font-size:0.8rem;color:#6a4a5a;">
+            <div style="margin-top:4px;font-size:0.8rem;color:#6a4a5a;">
                 <i class="fas fa-info-circle"></i> Kosongkan jika tidak ingin mengganti gambar
             </div>
         </div>
@@ -136,9 +144,17 @@
         </div>
         
         <div class="form-group">
+            <label><i class="fas fa-link"></i> Link Gambar (Google Drive)</label>
+            <input type="url" id="editTestimoniLinkGambar" placeholder="https://drive.google.com/uc?export=view&id=..." />
+            <div style="margin-top:4px;font-size:0.8rem;color:#6a4a5a;">
+                <i class="fas fa-info-circle"></i> Upload screenshot ke Drive, paste link di sini
+            </div>
+        </div>
+        
+        <div class="form-group">
             <label><i class="fas fa-image"></i> Ganti Screenshot (opsional)</label>
             <input type="file" id="editTestimoniGambar" accept="image/*" />
-            <div style="margin-top:6px;font-size:0.8rem;color:#6a4a5a;">
+            <div style="margin-top:4px;font-size:0.8rem;color:#6a4a5a;">
                 <i class="fas fa-info-circle"></i> Upload screenshot chat WA
             </div>
         </div>
@@ -200,8 +216,20 @@
                     <select id="produkKategori"></select>
                 </div>
                 <div class="admin-form-group">
-                    <label><i class="fas fa-image"></i> Upload Gambar</label>
+                    <label><i class="fas fa-link"></i> Link Gambar (Google Drive)</label>
+                    <input type="url" id="produkLinkGambar" placeholder="https://drive.google.com/uc?export=view&id=..." />
+                    <div style="font-size:0.8rem;color:#6a4a5a;margin-top:4px;">
+                        <i class="fas fa-info-circle"></i> 
+                        Upload ke Drive, copy link, paste di sini.
+                        <br>Format: <code>https://drive.google.com/uc?export=view&id=XXXX</code>
+                    </div>
+                    
+                    <label><i class="fas fa-image"></i> Upload Gambar (alternatif)</label>
                     <input type="file" id="produkGambar" accept="image/*" />
+                    <div style="font-size:0.8rem;color:#6a4a5a;margin-top:2px;">
+                        <i class="fas fa-info-circle"></i> Atau upload langsung dari komputer
+                    </div>
+                    
                     <button class="btn-admin" onclick="tambahProduk()"><i class="fas fa-plus-circle"></i> Tambah</button>
                     <button class="btn-admin-outline" onclick="resetFormProduk()"><i class="fas fa-undo"></i> Reset</button>
                 </div>
@@ -255,7 +283,14 @@
                         <textarea id="testimoniText" rows="2" placeholder="Isi testimoni..."></textarea>
                     </div>
                     <div class="admin-form-group" style="grid-column:1/-1;">
-                        <label><i class="fas fa-image"></i> Screenshot WA</label>
+                        <label><i class="fas fa-link"></i> Link Gambar (Google Drive)</label>
+                        <input type="url" id="testimoniLinkGambar" placeholder="https://drive.google.com/uc?export=view&id=..." />
+                        <div style="font-size:0.8rem;color:#6a4a5a;margin-top:2px;">
+                            <i class="fas fa-info-circle"></i> Upload screenshot ke Drive, paste link di sini
+                        </div>
+                    </div>
+                    <div class="admin-form-group" style="grid-column:1/-1;">
+                        <label><i class="fas fa-image"></i> Upload Screenshot (alternatif)</label>
                         <input type="file" id="testimoniGambar" accept="image/*" />
                     </div>
                     <div style="grid-column:1/-1;">
@@ -300,7 +335,11 @@
 
                 <div class="admin-form-group">
                     <label><i class="fab fa-whatsapp"></i> Nomor WhatsApp</label>
-                    <input type="text" id="webWhatsApp" placeholder="6281234567890" value="08179897500" />
+                    <input type="text" id="webWhatsApp" placeholder="081234567890" value="08179897500" />
+                    <div style="font-size:0.8rem;color:#6a4a5a;margin-top:4px;">
+                        <i class="fas fa-info-circle"></i> 
+                        Masukkan nomor WA tanpa tanda + atau spasi
+                    </div>
                 </div>
 
                 <div class="admin-form-group">
@@ -308,7 +347,7 @@
                     <input type="file" id="webHeroImage" accept="image/*" />
                     <div style="font-size:0.8rem;color:#6a4a5a;margin-top:4px;">
                         <i class="fas fa-info-circle"></i> 
-                        Maksimal 1MB • Format: JPG, PNG • Resize otomatis ke 1200x600px
+                        Maksimal 1MB • Format: JPG, PNG • Resize otomatis
                     </div>
                 </div>
 
@@ -371,7 +410,7 @@
     <div class="cta-bottom">
         <h2 id="ctaTitle"><i class="fas fa-heart" style="color:#f8bbd0;"></i> Siap Glowing?</h2>
         <p id="ctaDesc">Konsultasikan kebutuhan kulitmu dan dapatkan rekomendasi produk terbaik!</p>
-        <a href="https://wa.me/6281234567890?text=Halo%20saya%20ingin%20konsultasi%20skincare" target="_blank" class="btn-cta-light" id="waLink">
+        <a href="https://wa.me/628179897500?text=Halo%20saya%20ingin%20konsultasi%20skincare" target="_blank" class="btn-cta-light" id="waLink">
             <i class="fab fa-whatsapp"></i> Chat via WhatsApp
         </a>
     </div>
