@@ -93,7 +93,6 @@ header {
     color: #fff !important;
 }
 
-/* ===== INSTAGRAM BUTTON ===== */
 .btn-ig {
     background: linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045);
     padding: 10px 24px;
@@ -147,6 +146,31 @@ header {
 
 .storage-info i {
     color: #d81b60;
+}
+
+.sync-status {
+    background: rgba(46, 125, 50, 0.15);
+    padding: 6px 16px;
+    border-radius: 30px;
+    font-size: 0.8rem;
+    color: #2e7d32;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid rgba(46, 125, 50, 0.2);
+    transition: 0.3s;
+}
+
+.sync-status.syncing {
+    color: #f57f17;
+    border-color: rgba(245, 127, 23, 0.2);
+    background: rgba(245, 127, 23, 0.1);
+}
+
+.sync-status.offline {
+    color: #c62828;
+    border-color: rgba(198, 40, 40, 0.2);
+    background: rgba(198, 40, 40, 0.08);
 }
 
 /* ===== LOGIN MODAL ===== */
@@ -333,6 +357,23 @@ header {
 
 .admin-panel .btn-ubah-password:hover {
     background: #4a148c;
+}
+
+.admin-panel .btn-sync-cloud {
+    background: #1565c0;
+    color: #fff;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 40px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s;
+    font-family: 'Inter', sans-serif;
+    margin-left: 5px;
+}
+
+.admin-panel .btn-sync-cloud:hover {
+    background: #0d47a1;
 }
 
 .admin-panel .btn-reset {
