@@ -54,19 +54,98 @@ let cloudSyncEnabled = true;
 let dataLoaded = false;
 
 // ============================================================
+// FUNGSI EKSTRAK ID DARI LINK GOOGLE DRIVE
+// ============================================================
+function extractDriveId(input) {
+    if (!input) return null;
+    
+    // Trim spasi
+    input = input.trim();
+    
+    // Jika input adalah ID murni (tanpa link)
+    // Format ID biasanya 33 karakter alphanumeric dengan underscore/dash
+    if (/^[a-zA-Z0-9_-]{25,50}$/.test(input)) {
+        return input;
+    }
+    
+    // Coba ambil ID dari berbagai format link
+    let match;
+    
+    // Format 1: /file/d/XXXXX/view
+    match = input.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+    if (match) return match[1];
+    
+    // Format 2: ?id=XXXXX
+    match = input.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (match) return match[1];
+    
+    // Format 3: /d/XXXXX (tanpa file)
+    match = input.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (match) return match[1];
+    
+    // Format 4: uc?id=XXXXX atau export=view&id=XXXXX
+    match = input.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (match) return match[1];
+    
+    // Format 5: Ambil ID dari URL path (fallback)
+    // Contoh: https://drive.google.com/open?id=XXXXX
+    match = input.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (match) return match[1];
+    
+    // Format 6: Link thumbnail / thumbnail?id=XXXXX
+    match = input.match(/thumbnail[?&]id=([a-zA-Z0-9_-]+)/);
+    if (match) return match[1];
+    
+    // Jika semua gagal, coba ambi karakter alphanumeric panjang di URL
+    const allMatches = input.match(/([a-zA-Z0-9_-]{25,50})/g);
+    if (allMatches) {
+        // Ambil yang pertama yang terlihat seperti ID Drive
+        for (const possibleId of allMatches) {
+            // ID Drive biasanya 28-40 karakter
+            if (possibleId.length >= 28 && possibleId.length <= 45) {
+                return possibleId;
+            }
+        }
+        // Jika tidak ada yang sesuai kriteria, ambil yang pertama
+        return allMatches[0];
+    }
+    
+    return null;
+}
+
+// ============================================================
+// FUNGSI KONVERSI LINK DRIVE KE GAMBAR LANGUSNG
+// ============================================================
+function convertDriveLink(input) {
+    if (!input) return null;
+    
+    const id = extractDriveId(input);
+    if (id) {
+        // Gunakan format yang paling stabil
+        return 'https://drive.google.com/uc?export=view&id=' + id;
+    }
+    
+    // Jika input sudah berupa URL gambar langsung, return asli
+    if (input.includes('http') && (input.includes('.jpg') || input.includes('.png') || input.includes('.jpeg') || input.includes('.gif') || input.includes('.webp'))) {
+        return input;
+    }
+    
+    return input;
+}
+
+// ============================================================
 // FIX GAMBAR GOOGLE DRIVE - CORS SOLUTION
 // ============================================================
 function fixDriveImage(url) {
     if (!url) return url;
     
-    // Jika sudah menggunakan proxy atau bukan link Drive, lewati
+    // Jika sudah menggunakan proxy, lewati
     if (url.includes('images.weserv.nl') || url.includes('corsproxy')) {
         return url;
     }
     
     // Cek apakah link dari Google Drive
     if (url.includes('drive.google.com') || url.includes('lh3.googleusercontent.com')) {
-        // Gunakan proxy images.weserv.nl (gratis, cepat)
         return 'https://images.weserv.nl/?url=' + encodeURIComponent(url);
     }
     
@@ -74,25 +153,12 @@ function fixDriveImage(url) {
 }
 
 // ============================================================
-// VALIDASI LINK GOOGLE DRIVE
+// VALIDASI LINK GOOGLE DRIVE (CEK APAKAH VALID)
 // ============================================================
-function isValidDriveLink(url) {
-    if (!url) return false;
-    return url.includes('drive.google.com/uc?export=view') || 
-           url.includes('lh3.googleusercontent.com/d/') ||
-           url.includes('drive.google.com/file/d/') ||
-           url.includes('drive.google.com');
-}
-
-function convertDriveLink(url) {
-    if (!url) return url;
-    if (url.includes('file/d/')) {
-        const match = url.match(/\/d\/([^\/]+)/);
-        if (match) {
-            return 'https://drive.google.com/uc?export=view&id=' + match[1];
-        }
-    }
-    return url;
+function isValidDriveLink(input) {
+    if (!input) return false;
+    const id = extractDriveId(input);
+    return id !== null;
 }
 
 // ============================================================
@@ -672,7 +738,7 @@ function updateStorageCount() {
 }
 
 // ============================================================
-// TAMBAH PRODUK (HANYA LINK DRIVE)
+// TAMBAH PRODUK (DENGAN EKSTRAK ID OTOMATIS)
 // ============================================================
 function tambahProduk() {
     if (!isLoggedIn) {
@@ -684,21 +750,22 @@ function tambahProduk() {
     const nama = document.getElementById('produkNama').value.trim();
     const harga = document.getElementById('produkHarga').value.trim();
     const kategori = document.getElementById('produkKategori').value;
-    const linkGambar = document.getElementById('produkLinkGambar').value.trim();
+    const linkInput = document.getElementById('produkLinkGambar').value.trim();
 
     if (!nama || !harga) {
         alert('⚠️ Mohon isi Nama dan Harga produk!');
         return;
     }
 
-    if (!linkGambar) {
+    if (!linkInput) {
         alert('⚠️ Mohon isi Link Gambar dari Google Drive!');
         return;
     }
 
-    let finalLink = convertDriveLink(linkGambar);
-    if (!isValidDriveLink(finalLink) && !finalLink.includes('https://')) {
-        alert('⚠️ Link tidak valid! Gunakan link dari Google Drive.\nFormat: https://drive.google.com/uc?export=view&id=XXXX');
+    // Konversi link ke format gambar langsung
+    const finalLink = convertDriveLink(linkInput);
+    if (!finalLink) {
+        alert('⚠️ Link tidak valid! Pastikan link Google Drive benar atau masukkan ID gambar.\nContoh ID: 1utiURA2NJxC7Q0xVH6YcapUegluyUphM');
         return;
     }
 
@@ -711,7 +778,7 @@ function tambahProduk() {
 }
 
 // ============================================================
-// EDIT PRODUK (HANYA LINK DRIVE)
+// EDIT PRODUK (DENGAN EKSTRAK ID OTOMATIS)
 // ============================================================
 function editProduk(id) {
     if (!isLoggedIn) {
@@ -735,6 +802,7 @@ function editProduk(id) {
         <option value="${k}" ${k === produk.kategori ? 'selected' : ''}>${k}</option>
     `).join('');
 
+    // Tampilkan link asli atau ID
     const linkInput = document.getElementById('editLinkGambar');
     linkInput.value = produk.gambar || '';
 
@@ -751,14 +819,14 @@ function simpanEdit() {
     const nama = document.getElementById('editNama').value.trim();
     const harga = document.getElementById('editHarga').value.trim();
     const kategori = document.getElementById('editKategori').value;
-    const linkGambar = document.getElementById('editLinkGambar').value.trim();
+    const linkInput = document.getElementById('editLinkGambar').value.trim();
 
     if (!nama || !harga) {
         alert('⚠️ Nama dan Harga harus diisi!');
         return;
     }
 
-    if (!linkGambar) {
+    if (!linkInput) {
         alert('⚠️ Mohon isi Link Gambar dari Google Drive!');
         return;
     }
@@ -769,9 +837,9 @@ function simpanEdit() {
         return;
     }
 
-    let finalLink = convertDriveLink(linkGambar);
-    if (!isValidDriveLink(finalLink) && !finalLink.includes('https://')) {
-        alert('⚠️ Link tidak valid! Gunakan link dari Google Drive.');
+    const finalLink = convertDriveLink(linkInput);
+    if (!finalLink) {
+        alert('⚠️ Link tidak valid! Pastikan link Google Drive benar atau masukkan ID gambar.');
         return;
     }
 
@@ -859,7 +927,7 @@ function renderTestimonials() {
 }
 
 // ============================================================
-// TAMBAH TESTIMONI (HANYA LINK DRIVE)
+// TAMBAH TESTIMONI (DENGAN EKSTRAK ID OTOMATIS)
 // ============================================================
 function tambahTestimoni() {
     if (!isLoggedIn) {
@@ -871,21 +939,21 @@ function tambahTestimoni() {
     const nama = document.getElementById('testimoniNama').value.trim();
     const text = document.getElementById('testimoniText').value.trim();
     const rating = parseInt(document.getElementById('testimoniRating').value);
-    const linkGambar = document.getElementById('testimoniLinkGambar').value.trim();
+    const linkInput = document.getElementById('testimoniLinkGambar').value.trim();
 
     if (!nama || !text) {
         alert('⚠️ Mohon isi Nama dan Isi testimoni!');
         return;
     }
 
-    if (!linkGambar) {
+    if (!linkInput) {
         alert('⚠️ Mohon isi Link Gambar dari Google Drive!');
         return;
     }
 
-    let finalLink = convertDriveLink(linkGambar);
-    if (!isValidDriveLink(finalLink) && !finalLink.includes('https://')) {
-        alert('⚠️ Link tidak valid! Gunakan link dari Google Drive.');
+    const finalLink = convertDriveLink(linkInput);
+    if (!finalLink) {
+        alert('⚠️ Link tidak valid! Pastikan link Google Drive benar atau masukkan ID gambar.');
         return;
     }
 
@@ -898,7 +966,7 @@ function tambahTestimoni() {
 }
 
 // ============================================================
-// EDIT TESTIMONI (HANYA LINK DRIVE)
+// EDIT TESTIMONI (DENGAN EKSTRAK ID OTOMATIS)
 // ============================================================
 function editTestimoni(id) {
     if (!isLoggedIn) {
@@ -934,14 +1002,14 @@ function simpanEditTestimoni() {
     const nama = document.getElementById('editTestimoniNama').value.trim();
     const text = document.getElementById('editTestimoniText').value.trim();
     const rating = parseInt(document.getElementById('editTestimoniRating').value);
-    const linkGambar = document.getElementById('editTestimoniLinkGambar').value.trim();
+    const linkInput = document.getElementById('editTestimoniLinkGambar').value.trim();
 
     if (!nama || !text) {
         alert('⚠️ Nama dan Isi testimoni harus diisi!');
         return;
     }
 
-    if (!linkGambar) {
+    if (!linkInput) {
         alert('⚠️ Mohon isi Link Gambar dari Google Drive!');
         return;
     }
@@ -952,9 +1020,9 @@ function simpanEditTestimoni() {
         return;
     }
 
-    let finalLink = convertDriveLink(linkGambar);
-    if (!isValidDriveLink(finalLink) && !finalLink.includes('https://')) {
-        alert('⚠️ Link tidak valid! Gunakan link dari Google Drive.');
+    const finalLink = convertDriveLink(linkInput);
+    if (!finalLink) {
+        alert('⚠️ Link tidak valid! Pastikan link Google Drive benar atau masukkan ID gambar.');
         return;
     }
 
@@ -996,7 +1064,7 @@ function resetFormTestimoni() {
 }
 
 // ============================================================
-// PENGATURAN WEB (HERO IMAGE PAKAI LINK DRIVE)
+// PENGATURAN WEB (HERO IMAGE DENGAN EKSTRAK ID OTOMATIS)
 // ============================================================
 function applyWebSettings() {
     if (webSettings.namaToko) {
@@ -1053,7 +1121,7 @@ function simpanPengaturanWeb() {
     const ctaTitle = document.getElementById('webCtaTitle').value.trim();
     const ctaDesc = document.getElementById('webCtaDesc').value.trim();
     const whatsapp = document.getElementById('webWhatsApp').value.trim();
-    const heroImage = document.getElementById('webHeroImage').value.trim();
+    const linkInput = document.getElementById('webHeroImage').value.trim();
 
     if (!namaToko) {
         alert('⚠️ Nama Toko harus diisi!');
@@ -1061,12 +1129,12 @@ function simpanPengaturanWeb() {
     }
 
     let finalHeroImage = webSettings.heroImage || '';
-    if (heroImage) {
-        let finalLink = convertDriveLink(heroImage);
-        if (isValidDriveLink(finalLink) || finalLink.includes('https://')) {
-            finalHeroImage = finalLink;
+    if (linkInput) {
+        const converted = convertDriveLink(linkInput);
+        if (converted) {
+            finalHeroImage = converted;
         } else {
-            alert('⚠️ Link Hero Image tidak valid! Gunakan link dari Google Drive.\nFormat: https://drive.google.com/uc?export=view&id=XXXX');
+            alert('⚠️ Link Hero Image tidak valid! Pastikan link Google Drive benar atau masukkan ID gambar.');
             return;
         }
     }
