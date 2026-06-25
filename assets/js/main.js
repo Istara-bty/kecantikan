@@ -1,5 +1,5 @@
 // ============================================================
-// FIREBASE CONFIG - KONFIGURASI DARI FIREBASE ANDA
+// FIREBASE CONFIG
 // ============================================================
 const firebaseConfig = {
     apiKey: "AIzaSyAvP3XWnECZe3wRyjQ4Hkxn45-_PSjOV9g",
@@ -11,7 +11,6 @@ const firebaseConfig = {
     appId: "1:704960864781:web:bb3584e49e3bcd22746b44"
 };
 
-// Inisialisasi Firebase
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
@@ -21,7 +20,7 @@ const database = firebase.database();
 const STORAGE_KEY = 'glowBeautyData';
 
 // ============================================================
-// DATA DEFAULT - KOSONG!
+// DATA DEFAULT
 // ============================================================
 const defaultData = {
     categories: ['Skincare', 'Makeup', 'Body Care', 'Hair Care'],
@@ -35,7 +34,7 @@ const defaultData = {
         heroDesc: 'Temukan rangkaian skincare dan kecantikan premium untuk kulit glowing dan sehat. Aman, halal, dan teruji dermatologis.',
         ctaTitle: '<i class="fas fa-heart" style="color:#f8bbd0;"></i> Siap Glowing?',
         ctaDesc: 'Konsultasikan kebutuhan kulitmu dan dapatkan rekomendasi produk terbaik!',
-        whatsapp: '08179897500',
+        whatsapp: '628179897500',
         heroImage: 'https://via.placeholder.com/500x400/d81b60/ffffff?text=Glow+Beauty'
     }
 };
@@ -64,7 +63,7 @@ function compressImage(file, maxWidth, maxHeight, quality) {
         }
 
         if (file.size > 1024 * 1024) {
-            reject('File terlalu besar! Maksimal 1MB. Ukuran: ' + (file.size / 1024 / 1024).toFixed(2) + ' MB');
+            reject('File terlalu besar! Maksimal 1MB.');
             return;
         }
 
@@ -119,7 +118,6 @@ function isValidDriveLink(url) {
 }
 
 function convertDriveLink(url) {
-    // Konversi link drive ke format embed
     if (url.includes('file/d/')) {
         const match = url.match(/\/d\/([^\/]+)/);
         if (match) {
@@ -127,22 +125,6 @@ function convertDriveLink(url) {
         }
     }
     return url;
-}
-
-// ============================================================
-// FUNGSI GET WA NUMBER
-// ============================================================
-function getWaNumber() {
-    // Ambil dari webSettings atau default
-    let number = webSettings.whatsapp || '08179897500';
-    // Hanya ambil angka
-    number = number.replace(/\D/g, '');
-    return number;
-}
-
-function getWaLink() {
-    const number = getWaNumber();
-    return 'https://wa.me/' + number;
 }
 
 // ============================================================
@@ -187,7 +169,7 @@ function ubahPassword() {
 }
 
 // ============================================================
-// CLOUD SYNC FUNCTIONS
+// CLOUD SYNC
 // ============================================================
 function updateSyncStatus(status, message) {
     const el = document.getElementById('syncStatus');
@@ -334,7 +316,7 @@ function clearAllData() {
         return;
     }
     
-    if (!confirm('⚠️ Yakin ingin menghapus SEMUA data? (Produk, Testimoni, Kategori, Pengaturan Web)\n\nData akan dihapus dari LocalStorage dan Firebase secara permanen!\nTINDAKAN INI TIDAK DAPAT DIBATALKAN!')) return;
+    if (!confirm('⚠️ Yakin ingin menghapus SEMUA data? TINDAKAN INI TIDAK DAPAT DIBATALKAN!')) return;
     if (!confirm('Konfirmasi kedua: Hapus semua data?')) return;
     
     categories = ['Skincare', 'Makeup', 'Body Care', 'Hair Care'];
@@ -348,7 +330,7 @@ function clearAllData() {
         heroDesc: 'Temukan rangkaian skincare dan kecantikan premium untuk kulit glowing dan sehat. Aman, halal, dan teruji dermatologis.',
         ctaTitle: '<i class="fas fa-heart" style="color:#f8bbd0;"></i> Siap Glowing?',
         ctaDesc: 'Konsultasikan kebutuhan kulitmu dan dapatkan rekomendasi produk terbaik!',
-        whatsapp: '08179897500',
+        whatsapp: '628179897500',
         heroImage: 'https://via.placeholder.com/500x400/d81b60/ffffff?text=Glow+Beauty'
     };
     
@@ -443,7 +425,7 @@ function resetAllData() {
         openLogin();
         return;
     }
-    if (!confirm('⚠️ Yakin ingin mereset data ke default? Data Anda akan hilang!')) return;
+    if (!confirm('⚠️ Yakin ingin mereset data ke default?')) return;
     if (!confirm('Konfirmasi kedua: Reset semua data?')) return;
 
     categories = [...defaultData.categories];
@@ -747,9 +729,7 @@ function tambahProduk() {
 
     let gambar = 'https://via.placeholder.com/150/d81b60/ffffff?text=Produk';
 
-    // 1. Prioritaskan Link Google Drive
     if (linkGambar) {
-        // Konversi link jika perlu
         let finalLink = convertDriveLink(linkGambar);
         if (isValidDriveLink(finalLink) || finalLink.includes('https://')) {
             gambar = finalLink;
@@ -757,9 +737,7 @@ function tambahProduk() {
             alert('⚠️ Link tidak valid! Gunakan link dari Google Drive.\nFormat: https://drive.google.com/uc?export=view&id=XXXX');
             return;
         }
-    } 
-    // 2. Jika ada file yang diupload
-    else if (fileInput.files && fileInput.files[0]) {
+    } else if (fileInput.files && fileInput.files[0]) {
         const file = fileInput.files[0];
         if (file.size > 2 * 1024 * 1024) {
             alert('⚠️ File terlalu besar! Maksimal 2MB.');
@@ -812,7 +790,6 @@ function editProduk(id) {
         <option value="${k}" ${k === produk.kategori ? 'selected' : ''}>${k}</option>
     `).join('');
 
-    // Isi link gambar jika ada
     const linkInput = document.getElementById('editLinkGambar');
     if (produk.gambar && (produk.gambar.includes('drive.google.com') || produk.gambar.includes('lh3.googleusercontent.com'))) {
         linkInput.value = produk.gambar;
@@ -863,7 +840,6 @@ function simpanEdit() {
         alert('✅ Produk berhasil diupdate!');
     }
 
-    // 1. Prioritaskan Link Google Drive
     if (linkGambar) {
         let finalLink = convertDriveLink(linkGambar);
         if (isValidDriveLink(finalLink) || finalLink.includes('https://')) {
@@ -875,7 +851,6 @@ function simpanEdit() {
         }
     }
 
-    // 2. Jika ada file yang diupload
     if (fileInput.files && fileInput.files[0]) {
         const file = fileInput.files[0];
         if (file.size > 2 * 1024 * 1024) {
@@ -986,7 +961,6 @@ function tambahTestimoni() {
 
     let gambar = '';
 
-    // 1. Prioritaskan Link Google Drive
     if (linkGambar) {
         let finalLink = convertDriveLink(linkGambar);
         if (isValidDriveLink(finalLink) || finalLink.includes('https://')) {
@@ -995,9 +969,7 @@ function tambahTestimoni() {
             alert('⚠️ Link tidak valid! Gunakan link dari Google Drive.');
             return;
         }
-    } 
-    // 2. Jika ada file yang diupload
-    else if (fileInput.files && fileInput.files[0]) {
+    } else if (fileInput.files && fileInput.files[0]) {
         const file = fileInput.files[0];
         if (file.size > 2 * 1024 * 1024) {
             alert('⚠️ File terlalu besar! Maksimal 2MB.');
@@ -1046,7 +1018,6 @@ function editTestimoni(id) {
     document.getElementById('editTestimoniText').value = testi.text;
     document.getElementById('editTestimoniRating').value = testi.rating;
     
-    // Isi link gambar jika ada
     const linkInput = document.getElementById('editTestimoniLinkGambar');
     if (testi.gambar && (testi.gambar.includes('drive.google.com') || testi.gambar.includes('lh3.googleusercontent.com'))) {
         linkInput.value = testi.gambar;
@@ -1097,7 +1068,6 @@ function simpanEditTestimoni() {
         alert('✅ Testimoni berhasil diupdate!');
     }
 
-    // 1. Prioritaskan Link Google Drive
     if (linkGambar) {
         let finalLink = convertDriveLink(linkGambar);
         if (isValidDriveLink(finalLink) || finalLink.includes('https://')) {
@@ -1109,7 +1079,6 @@ function simpanEditTestimoni() {
         }
     }
 
-    // 2. Jika ada file yang diupload
     if (fileInput.files && fileInput.files[0]) {
         const file = fileInput.files[0];
         if (file.size > 2 * 1024 * 1024) {
@@ -1178,7 +1147,7 @@ function applyWebSettings() {
         const waNumber = webSettings.whatsapp.replace(/\D/g, '');
         const waLink = document.getElementById('waLink');
         if (waLink) {
-            waLink.href = `https://wa.me/${waNumber}?text=Halo%20saya%20ingin%20konsultasi%20skincare`;
+            waLink.href = `https://api.whatsapp.com/send?phone=${waNumber}`;
         }
     }
 
@@ -1187,7 +1156,7 @@ function applyWebSettings() {
     document.getElementById('webHeroDesc').value = webSettings.heroDesc || '';
     document.getElementById('webCtaTitle').value = webSettings.ctaTitle || '';
     document.getElementById('webCtaDesc').value = webSettings.ctaDesc || '';
-    document.getElementById('webWhatsApp').value = webSettings.whatsapp || '08179897500';
+    document.getElementById('webWhatsApp').value = webSettings.whatsapp || '628179897500';
 }
 
 function simpanPengaturanWeb() {
@@ -1216,7 +1185,7 @@ function simpanPengaturanWeb() {
         webSettings.heroDesc = heroDesc || defaultData.webSettings.heroDesc;
         webSettings.ctaTitle = ctaTitle || defaultData.webSettings.ctaTitle;
         webSettings.ctaDesc = ctaDesc || defaultData.webSettings.ctaDesc;
-        webSettings.whatsapp = whatsapp || '08179897500';
+        webSettings.whatsapp = whatsapp || '628179897500';
         if (gambarBaru) {
             webSettings.heroImage = gambarBaru;
         }
