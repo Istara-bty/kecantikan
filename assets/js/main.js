@@ -15,12 +15,13 @@ firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
 // ============================================================
-// KEY STORAGE
+// KEY STORAGE - HANYA UNTUK PASSWORD ADMIN
 // ============================================================
-const STORAGE_KEY = 'glowBeautyData';
+const STORAGE_KEY = 'glowBeautyData'; // TIDAK DIGUNAKAN UNTUK DATA
+const PASSWORD_KEY = 'adminPassword';
 
 // ============================================================
-// DATA DEFAULT
+// DATA DEFAULT - HANYA SEBAGAI FALLBACK JIKA FIREBASE KOSONG
 // ============================================================
 const defaultData = {
     categories: ['Skincare', 'Makeup', 'Body Care', 'Hair Care'],
@@ -35,7 +36,7 @@ const defaultData = {
         ctaTitle: '<i class="fas fa-heart" style="color:#f8bbd0;"></i> Siap Glowing?',
         ctaDesc: 'Konsultasikan kebutuhan kulitmu dan dapatkan rekomendasi produk terbaik!',
         whatsapp: '628179897500',
-        heroImage: 'https://via.placeholder.com/500x400/d81b60/ffffff?text=Glow+Beauty'
+        heroImage: '' // KOSONG! TIDAK ADA PLACEHOLDER DEFAULT
     }
 };
 
@@ -51,6 +52,7 @@ let webSettings = {};
 let isLoggedIn = false;
 let isCloudLoading = false;
 let cloudSyncEnabled = true;
+let dataLoaded = false;
 
 // ============================================================
 // VALIDASI LINK GOOGLE DRIVE
@@ -64,7 +66,6 @@ function isValidDriveLink(url) {
 
 function convertDriveLink(url) {
     if (!url) return url;
-    // Konversi link drive ke format embed
     if (url.includes('file/d/')) {
         const match = url.match(/\/d\/([^\/]+)/);
         if (match) {
@@ -75,15 +76,15 @@ function convertDriveLink(url) {
 }
 
 // ============================================================
-// PASSWORD MANAGEMENT
+// PASSWORD MANAGEMENT (LocalStorage hanya untuk password)
 // ============================================================
 function getPassword() {
-    const saved = localStorage.getItem('adminPassword');
+    const saved = localStorage.getItem(PASSWORD_KEY);
     return saved || 'admin123';
 }
 
 function setPassword(newPass) {
-    localStorage.setItem('adminPassword', newPass);
+    localStorage.setItem(PASSWORD_KEY, newPass);
 }
 
 function ubahPassword() {
@@ -116,7 +117,7 @@ function ubahPassword() {
 }
 
 // ============================================================
-// CLOUD SYNC
+// CLOUD SYNC - SEMUA DATA DI FIREBASE
 // ============================================================
 function updateSyncStatus(status, message) {
     const el = document.getElementById('syncStatus');
@@ -181,12 +182,21 @@ function loadFromCloud() {
                 testimonials = data.testimonials || [];
                 nextTestimonialId = data.nextTestimonialId || 1;
                 webSettings = data.webSettings || defaultData.webSettings;
-                
-                saveData();
+                dataLoaded = true;
                 renderAll();
                 applyWebSettings();
                 updateSyncStatus('synced');
             } else {
+                // Firebase kosong, upload data default
+                categories = defaultData.categories;
+                products = [];
+                nextId = 1;
+                testimonials = [];
+                nextTestimonialId = 1;
+                webSettings = JSON.parse(JSON.stringify(defaultData.webSettings));
+                dataLoaded = true;
+                renderAll();
+                applyWebSettings();
                 saveToCloud();
                 updateSyncStatus('synced');
             }
@@ -196,6 +206,18 @@ function loadFromCloud() {
             console.warn('⚠️ Failed to load from Firebase:', error);
             updateSyncStatus('offline', 'Tidak terhubung');
             isCloudLoading = false;
+            // Jika gagal, coba pakai data default
+            if (!dataLoaded) {
+                categories = defaultData.categories;
+                products = [];
+                nextId = 1;
+                testimonials = [];
+                nextTestimonialId = 1;
+                webSettings = JSON.parse(JSON.stringify(defaultData.webSettings));
+                dataLoaded = true;
+                renderAll();
+                applyWebSettings();
+            }
         });
 }
 
@@ -211,28 +233,17 @@ function listenCloudChanges() {
                     return;
                 }
                 
-                const localData = localStorage.getItem(STORAGE_KEY);
-                if (localData) {
-                    try {
-                        const local = JSON.parse(localData);
-                        if (data.updatedAt && (!local.updatedAt || data.updatedAt > local.updatedAt)) {
-                            categories = data.categories || defaultData.categories;
-                            products = data.products || [];
-                            nextId = data.nextId || 1;
-                            testimonials = data.testimonials || [];
-                            nextTestimonialId = data.nextTestimonialId || 1;
-                            webSettings = data.webSettings || defaultData.webSettings;
-                            
-                            saveData();
-                            renderAll();
-                            applyWebSettings();
-                            console.log('✅ Synced from cloud');
-                            updateSyncStatus('synced');
-                        }
-                    } catch (e) {
-                        console.warn('⚠️ Error parsing local data:', e);
-                    }
-                }
+                categories = data.categories || defaultData.categories;
+                products = data.products || [];
+                nextId = data.nextId || 1;
+                testimonials = data.testimonials || [];
+                nextTestimonialId = data.nextTestimonialId || 1;
+                webSettings = data.webSettings || defaultData.webSettings;
+                
+                renderAll();
+                applyWebSettings();
+                console.log('✅ Synced from cloud');
+                updateSyncStatus('synced');
             } catch (e) {
                 console.warn('⚠️ Error processing Firebase data:', e);
             }
@@ -266,36 +277,33 @@ function clearAllData() {
     if (!confirm('⚠️ Yakin ingin menghapus SEMUA data? TINDAKAN INI TIDAK DAPAT DIBATALKAN!')) return;
     if (!confirm('Konfirmasi kedua: Hapus semua data?')) return;
     
-    categories = ['Skincare', 'Makeup', 'Body Care', 'Hair Care'];
-    products = [];
-    testimonials = [];
-    nextId = 1;
-    nextTestimonialId = 1;
-    webSettings = {
-        namaToko: 'GlowBeauty',
-        heroTitle: 'Rawat Kulitmu <br/><span>Dengan Produk Terbaik</span>',
-        heroDesc: 'Temukan rangkaian skincare dan kecantikan premium untuk kulit glowing dan sehat. Aman, halal, dan teruji dermatologis.',
-        ctaTitle: '<i class="fas fa-heart" style="color:#f8bbd0;"></i> Siap Glowing?',
-        ctaDesc: 'Konsultasikan kebutuhan kulitmu dan dapatkan rekomendasi produk terbaik!',
-        whatsapp: '628179897500',
-        heroImage: 'https://via.placeholder.com/500x400/d81b60/ffffff?text=Glow+Beauty'
-    };
-    
-    saveData();
-    
     const emptyData = {
-        categories: categories,
+        categories: ['Skincare', 'Makeup', 'Body Care', 'Hair Care'],
         products: [],
         nextId: 1,
         testimonials: [],
         nextTestimonialId: 1,
-        webSettings: webSettings,
+        webSettings: {
+            namaToko: 'GlowBeauty',
+            heroTitle: 'Rawat Kulitmu <br/><span>Dengan Produk Terbaik</span>',
+            heroDesc: 'Temukan rangkaian skincare dan kecantikan premium untuk kulit glowing dan sehat. Aman, halal, dan teruji dermatologis.',
+            ctaTitle: '<i class="fas fa-heart" style="color:#f8bbd0;"></i> Siap Glowing?',
+            ctaDesc: 'Konsultasikan kebutuhan kulitmu dan dapatkan rekomendasi produk terbaik!',
+            whatsapp: '628179897500',
+            heroImage: ''
+        },
         updatedAt: new Date().toISOString()
     };
     
     database.ref('glowBeautyData').set(emptyData)
         .then(() => {
             console.log('✅ Data Firebase dihapus permanen!');
+            categories = emptyData.categories;
+            products = [];
+            testimonials = [];
+            nextId = 1;
+            nextTestimonialId = 1;
+            webSettings = emptyData.webSettings;
             renderAll();
             applyWebSettings();
             alert('🗑️ Semua data telah dihapus permanen!');
@@ -307,64 +315,7 @@ function clearAllData() {
 }
 
 // ============================================================
-// LOAD & SAVE DATA
-// ============================================================
-function loadData() {
-    let hasLocalData = false;
-    try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-            const data = JSON.parse(saved);
-            categories = data.categories || defaultData.categories;
-            products = data.products || [];
-            testimonials = data.testimonials || [];
-            nextId = data.nextId || 1;
-            nextTestimonialId = data.nextTestimonialId || 1;
-            webSettings = data.webSettings || defaultData.webSettings;
-            console.log('✅ Data loaded from LocalStorage');
-            hasLocalData = true;
-        }
-    } catch (e) {
-        console.warn('⚠️ Failed to load from LocalStorage:', e);
-    }
-    
-    if (!hasLocalData) {
-        categories = [...defaultData.categories];
-        products = [];
-        testimonials = [];
-        nextId = 1;
-        nextTestimonialId = 1;
-        webSettings = JSON.parse(JSON.stringify(defaultData.webSettings));
-        saveData();
-    }
-}
-
-function saveData() {
-    try {
-        const data = { 
-            categories, 
-            products: products || [], 
-            nextId, 
-            testimonials: testimonials || [], 
-            nextTestimonialId, 
-            webSettings 
-        };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-        console.log('✅ Data saved to LocalStorage');
-        updateStorageCount();
-        saveToCloud();
-    } catch (e) {
-        console.warn('⚠️ Failed to save to LocalStorage:', e);
-    }
-}
-
-function updateStorageCount() {
-    const el = document.getElementById('storageCount');
-    if (el) el.textContent = products?.length || 0;
-}
-
-// ============================================================
-// RESET & BACKUP
+// RESET & BACKUP (BERBASIS FIREBASE)
 // ============================================================
 function resetAllData() {
     if (!isLoggedIn) {
@@ -375,16 +326,40 @@ function resetAllData() {
     if (!confirm('⚠️ Yakin ingin mereset data ke default?')) return;
     if (!confirm('Konfirmasi kedua: Reset semua data?')) return;
 
-    categories = [...defaultData.categories];
-    products = [];
-    testimonials = [];
-    nextId = 1;
-    nextTestimonialId = 1;
-    webSettings = JSON.parse(JSON.stringify(defaultData.webSettings));
-    saveData();
-    renderAll();
-    applyWebSettings();
-    alert('🗑️ Semua data telah direset ke default (kosong)!');
+    const resetData = {
+        categories: ['Skincare', 'Makeup', 'Body Care', 'Hair Care'],
+        products: [],
+        nextId: 1,
+        testimonials: [],
+        nextTestimonialId: 1,
+        webSettings: {
+            namaToko: 'GlowBeauty',
+            heroTitle: 'Rawat Kulitmu <br/><span>Dengan Produk Terbaik</span>',
+            heroDesc: 'Temukan rangkaian skincare dan kecantikan premium untuk kulit glowing dan sehat. Aman, halal, dan teruji dermatologis.',
+            ctaTitle: '<i class="fas fa-heart" style="color:#f8bbd0;"></i> Siap Glowing?',
+            ctaDesc: 'Konsultasikan kebutuhan kulitmu dan dapatkan rekomendasi produk terbaik!',
+            whatsapp: '628179897500',
+            heroImage: ''
+        },
+        updatedAt: new Date().toISOString()
+    };
+    
+    database.ref('glowBeautyData').set(resetData)
+        .then(() => {
+            categories = resetData.categories;
+            products = [];
+            testimonials = [];
+            nextId = 1;
+            nextTestimonialId = 1;
+            webSettings = resetData.webSettings;
+            renderAll();
+            applyWebSettings();
+            alert('🗑️ Semua data telah direset ke default (kosong)!');
+        })
+        .catch((error) => {
+            console.error('❌ Error resetting data:', error);
+            alert('⚠️ Gagal mereset data.');
+        });
 }
 
 function exportData() {
@@ -415,16 +390,31 @@ function importData(event) {
         try {
             const data = JSON.parse(e.target.result);
             if (data.categories) {
-                categories = data.categories;
-                products = data.products || [];
-                testimonials = data.testimonials || [];
-                nextId = data.nextId || 1;
-                nextTestimonialId = data.nextTestimonialId || 1;
-                webSettings = data.webSettings || defaultData.webSettings;
-                saveData();
-                renderAll();
-                applyWebSettings();
-                alert('✅ Data berhasil di-restore!');
+                const importData = {
+                    categories: data.categories,
+                    products: data.products || [],
+                    nextId: data.nextId || 1,
+                    testimonials: data.testimonials || [],
+                    nextTestimonialId: data.nextTestimonialId || 1,
+                    webSettings: data.webSettings || defaultData.webSettings,
+                    updatedAt: new Date().toISOString()
+                };
+                
+                database.ref('glowBeautyData').set(importData)
+                    .then(() => {
+                        categories = importData.categories;
+                        products = importData.products;
+                        testimonials = importData.testimonials;
+                        nextId = importData.nextId;
+                        nextTestimonialId = importData.nextTestimonialId;
+                        webSettings = importData.webSettings;
+                        renderAll();
+                        applyWebSettings();
+                        alert('✅ Data berhasil di-restore!');
+                    })
+                    .catch((error) => {
+                        alert('⚠️ Gagal restore data: ' + error.message);
+                    });
             } else {
                 alert('⚠️ File backup tidak valid!');
             }
@@ -470,8 +460,7 @@ function login() {
         document.querySelector('.admin-toggle').innerHTML = '<i class="fas fa-user-shield"></i> Admin';
         document.querySelector('.admin-toggle').style.background = 'rgba(216,27,96,0.2)';
         toggleAdmin();
-        renderAll();
-        applyWebSettings();
+        // Load data dari Firebase
         loadFromCloud();
         listenCloudChanges();
     } else {
@@ -552,7 +541,7 @@ function tambahKategori() {
     if (categories.includes(nama)) { alert('⚠️ Kategori sudah ada!'); return; }
     categories.push(nama);
     input.value = '';
-    saveData();
+    saveToCloud();
     renderAll();
     alert('✅ Kategori berhasil ditambahkan!');
 }
@@ -570,7 +559,7 @@ function hapusKategori(nama) {
         return;
     }
     categories = categories.filter(k => k !== nama);
-    saveData();
+    saveToCloud();
     renderAll();
     alert('🗑️ Kategori dihapus!');
 }
@@ -592,7 +581,7 @@ function editKategori(namaLama) {
         return p;
     });
     categories = categories.map(k => k === namaLama ? namaBaru : k);
-    saveData();
+    saveToCloud();
     renderAll();
     alert('✅ Kategori berhasil diupdate!');
 }
@@ -621,6 +610,7 @@ function renderProducts() {
             </tr>
         `;
         totalSpan.textContent = '0';
+        updateStorageCount();
         return;
     }
 
@@ -651,6 +641,11 @@ function renderProducts() {
 
     totalSpan.textContent = products.length;
     updateStorageCount();
+}
+
+function updateStorageCount() {
+    const el = document.getElementById('storageCount');
+    if (el) el.textContent = products?.length || 0;
 }
 
 // ============================================================
@@ -686,7 +681,7 @@ function tambahProduk() {
 
     const newProduct = { id: nextId++, nama, harga, kategori, gambar: finalLink };
     products.push(newProduct);
-    saveData();
+    saveToCloud();
     renderAll();
     resetFormProduk();
     alert('✅ Produk berhasil ditambahkan!');
@@ -764,7 +759,7 @@ function simpanEdit() {
         kategori: kategori,
         gambar: finalLink
     };
-    saveData();
+    saveToCloud();
     renderAll();
     closeEdit();
     alert('✅ Produk berhasil diupdate!');
@@ -781,7 +776,7 @@ function hapusProduk(id) {
     }
     if (confirm('Yakin ingin menghapus produk ini?')) {
         products = products.filter(p => p.id !== id);
-        saveData();
+        saveToCloud();
         renderAll();
         alert('🗑️ Produk dihapus!');
     }
@@ -873,7 +868,7 @@ function tambahTestimoni() {
 
     const newTestimonial = { id: nextTestimonialId++, nama, text, rating, gambar: finalLink };
     testimonials.push(newTestimonial);
-    saveData();
+    saveToCloud();
     renderAll();
     resetFormTestimoni();
     alert('✅ Testimoni berhasil ditambahkan!');
@@ -947,7 +942,7 @@ function simpanEditTestimoni() {
         rating: rating,
         gambar: finalLink
     };
-    saveData();
+    saveToCloud();
     renderAll();
     closeEditTestimoni();
     alert('✅ Testimoni berhasil diupdate!');
@@ -964,7 +959,7 @@ function hapusTestimoni(id) {
     }
     if (confirm('Yakin ingin menghapus testimoni ini?')) {
         testimonials = testimonials.filter(t => t.id !== id);
-        saveData();
+        saveToCloud();
         renderAll();
         alert('🗑️ Testimoni dihapus!');
     }
@@ -993,6 +988,10 @@ function applyWebSettings() {
     }
     if (webSettings.heroImage) {
         document.getElementById('heroImage').src = webSettings.heroImage;
+        document.getElementById('heroImage').style.display = 'block';
+    } else {
+        document.getElementById('heroImage').src = '';
+        document.getElementById('heroImage').style.display = 'none';
     }
     if (webSettings.ctaTitle) {
         document.getElementById('ctaTitle').innerHTML = webSettings.ctaTitle;
@@ -1038,7 +1037,7 @@ function simpanPengaturanWeb() {
     }
 
     // Validasi link hero image
-    let finalHeroImage = webSettings.heroImage;
+    let finalHeroImage = webSettings.heroImage || '';
     if (heroImage) {
         let finalLink = convertDriveLink(heroImage);
         if (isValidDriveLink(finalLink) || finalLink.includes('https://')) {
@@ -1057,7 +1056,7 @@ function simpanPengaturanWeb() {
     webSettings.whatsapp = whatsapp || '628179897500';
     webSettings.heroImage = finalHeroImage;
 
-    saveData();
+    saveToCloud();
     applyWebSettings();
     alert('✅ Pengaturan web berhasil disimpan!');
 }
@@ -1072,11 +1071,11 @@ function renderAll() {
 }
 
 // ============================================================
-// INIT
+// INIT - LOAD DARI FIREBASE
 // ============================================================
-loadData();
-renderAll();
-applyWebSettings();
+// Load data dari Firebase saat halaman dimuat
+loadFromCloud();
+listenCloudChanges();
 
 // ============================================================
 // MODAL CLOSE ON OUTSIDE CLICK
