@@ -29,7 +29,7 @@ const defaultData = {
         heroDesc: 'Temukan rangkaian skincare dan kecantikan premium untuk kulit glowing dan sehat. Aman, halal, dan teruji dermatologis.',
         ctaTitle: '<i class="fas fa-heart" style="color:#f8bbd0;"></i> Siap Glowing?',
         ctaDesc: 'Konsultasikan kebutuhan kulitmu dan dapatkan rekomendasi produk terbaik!',
-        whatsapp: '6281234567890',
+        whatsapp: '628179897500',
         heroImage: 'https://via.placeholder.com/500x400/d81b60/ffffff?text=Glow+Beauty'
     }
 };
