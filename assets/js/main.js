@@ -17,7 +17,6 @@ const database = firebase.database();
 // ============================================================
 // KEY STORAGE - HANYA UNTUK PASSWORD ADMIN
 // ============================================================
-const STORAGE_KEY = 'glowBeautyData'; // TIDAK DIGUNAKAN UNTUK DATA
 const PASSWORD_KEY = 'adminPassword';
 
 // ============================================================
@@ -36,7 +35,7 @@ const defaultData = {
         ctaTitle: '<i class="fas fa-heart" style="color:#f8bbd0;"></i> Siap Glowing?',
         ctaDesc: 'Konsultasikan kebutuhan kulitmu dan dapatkan rekomendasi produk terbaik!',
         whatsapp: '628179897500',
-        heroImage: '' // KOSONG! TIDAK ADA PLACEHOLDER DEFAULT
+        heroImage: ''
     }
 };
 
@@ -55,13 +54,34 @@ let cloudSyncEnabled = true;
 let dataLoaded = false;
 
 // ============================================================
+// FIX GAMBAR GOOGLE DRIVE - CORS SOLUTION
+// ============================================================
+function fixDriveImage(url) {
+    if (!url) return url;
+    
+    // Jika sudah menggunakan proxy atau bukan link Drive, lewati
+    if (url.includes('images.weserv.nl') || url.includes('corsproxy')) {
+        return url;
+    }
+    
+    // Cek apakah link dari Google Drive
+    if (url.includes('drive.google.com') || url.includes('lh3.googleusercontent.com')) {
+        // Gunakan proxy images.weserv.nl (gratis, cepat)
+        return 'https://images.weserv.nl/?url=' + encodeURIComponent(url);
+    }
+    
+    return url;
+}
+
+// ============================================================
 // VALIDASI LINK GOOGLE DRIVE
 // ============================================================
 function isValidDriveLink(url) {
     if (!url) return false;
     return url.includes('drive.google.com/uc?export=view') || 
            url.includes('lh3.googleusercontent.com/d/') ||
-           url.includes('drive.google.com/file/d/');
+           url.includes('drive.google.com/file/d/') ||
+           url.includes('drive.google.com');
 }
 
 function convertDriveLink(url) {
@@ -187,7 +207,6 @@ function loadFromCloud() {
                 applyWebSettings();
                 updateSyncStatus('synced');
             } else {
-                // Firebase kosong, upload data default
                 categories = defaultData.categories;
                 products = [];
                 nextId = 1;
@@ -206,7 +225,6 @@ function loadFromCloud() {
             console.warn('⚠️ Failed to load from Firebase:', error);
             updateSyncStatus('offline', 'Tidak terhubung');
             isCloudLoading = false;
-            // Jika gagal, coba pakai data default
             if (!dataLoaded) {
                 categories = defaultData.categories;
                 products = [];
@@ -460,7 +478,6 @@ function login() {
         document.querySelector('.admin-toggle').innerHTML = '<i class="fas fa-user-shield"></i> Admin';
         document.querySelector('.admin-toggle').style.background = 'rgba(216,27,96,0.2)';
         toggleAdmin();
-        // Load data dari Firebase
         loadFromCloud();
         listenCloudChanges();
     } else {
@@ -587,7 +604,7 @@ function editKategori(namaLama) {
 }
 
 // ============================================================
-// RENDER PRODUK
+// RENDER PRODUK (DENGAN fixDriveImage)
 // ============================================================
 function renderProducts() {
     const grid = document.getElementById('productGrid');
@@ -617,7 +634,10 @@ function renderProducts() {
     grid.innerHTML = products.map(p => `
         <div class="card-produk">
             <div class="img-wrapper">
-                <img src="${p.gambar || 'https://via.placeholder.com/150/d81b60/ffffff?text=Produk'}" alt="${p.nama}" onerror="this.src='https://via.placeholder.com/150/d81b60/ffffff?text=${encodeURIComponent(p.nama)}'" />
+                <img src="${fixDriveImage(p.gambar || 'https://via.placeholder.com/150/d81b60/ffffff?text=Produk')}" 
+                     alt="${p.nama}" 
+                     referrerpolicy="no-referrer"
+                     onerror="this.src='https://via.placeholder.com/150/d81b60/ffffff?text=${encodeURIComponent(p.nama)}'" />
             </div>
             <h4>${p.nama}</h4>
             <div class="harga">${p.harga}</div>
@@ -628,7 +648,10 @@ function renderProducts() {
     tbody.innerHTML = products.map((p, index) => `
         <tr>
             <td>${index + 1}</td>
-            <td><img src="${p.gambar || 'https://via.placeholder.com/40/d81b60/ffffff'}" style="width:40px;height:40px;object-fit:cover;border-radius:10px;" onerror="this.src='https://via.placeholder.com/40/d81b60/ffffff'" /></td>
+            <td><img src="${fixDriveImage(p.gambar || 'https://via.placeholder.com/40/d81b60/ffffff')}" 
+                     style="width:40px;height:40px;object-fit:cover;border-radius:10px;" 
+                     referrerpolicy="no-referrer"
+                     onerror="this.src='https://via.placeholder.com/40/d81b60/ffffff'" /></td>
             <td>${p.nama}</td>
             <td>${p.harga}</td>
             <td>${p.kategori}</td>
@@ -789,7 +812,7 @@ function resetFormProduk() {
 }
 
 // ============================================================
-// RENDER TESTIMONI
+// RENDER TESTIMONI (DENGAN fixDriveImage)
 // ============================================================
 function renderTestimonials() {
     const grid = document.getElementById('testimoniGrid');
@@ -810,7 +833,7 @@ function renderTestimonials() {
     grid.innerHTML = testimonials.map(t => `
         <div class="card-testimoni">
             <div class="stars">${'⭐'.repeat(t.rating)}</div>
-            ${t.gambar ? `<img src="${t.gambar}" class="testi-image" alt="Screenshot" />` : ''}
+            ${t.gambar ? `<img src="${fixDriveImage(t.gambar)}" class="testi-image" alt="Screenshot" referrerpolicy="no-referrer" />` : ''}
             <p>"${t.text}"</p>
             <div class="nama">- ${t.nama}</div>
         </div>
@@ -820,7 +843,7 @@ function renderTestimonials() {
     list.innerHTML = testimonials.map(t => `
         <div class="testimoni-item">
             <div class="info">
-                ${t.gambar ? `<img src="${t.gambar}" alt="Screenshot" />` : '<div style="width:50px;height:50px;border-radius:12px;background:rgba(216,27,96,0.1);display:flex;align-items:center;justify-content:center;font-size:1.5rem;"><i class="fas fa-user" style="color:#d81b60;"></i></div>'}
+                ${t.gambar ? `<img src="${fixDriveImage(t.gambar)}" alt="Screenshot" referrerpolicy="no-referrer" />` : '<div style="width:50px;height:50px;border-radius:12px;background:rgba(216,27,96,0.1);display:flex;align-items:center;justify-content:center;font-size:1.5rem;"><i class="fas fa-user" style="color:#d81b60;"></i></div>'}
                 <div class="text">
                     <div class="nama">${t.nama}</div>
                     <div class="rating">${'⭐'.repeat(t.rating)}</div>
@@ -987,8 +1010,9 @@ function applyWebSettings() {
         document.getElementById('heroDesc').textContent = webSettings.heroDesc;
     }
     if (webSettings.heroImage) {
-        document.getElementById('heroImage').src = webSettings.heroImage;
+        document.getElementById('heroImage').src = fixDriveImage(webSettings.heroImage);
         document.getElementById('heroImage').style.display = 'block';
+        document.getElementById('heroImage').setAttribute('referrerpolicy', 'no-referrer');
     } else {
         document.getElementById('heroImage').src = '';
         document.getElementById('heroImage').style.display = 'none';
@@ -1036,7 +1060,6 @@ function simpanPengaturanWeb() {
         return;
     }
 
-    // Validasi link hero image
     let finalHeroImage = webSettings.heroImage || '';
     if (heroImage) {
         let finalLink = convertDriveLink(heroImage);
@@ -1073,7 +1096,6 @@ function renderAll() {
 // ============================================================
 // INIT - LOAD DARI FIREBASE
 // ============================================================
-// Load data dari Firebase saat halaman dimuat
 loadFromCloud();
 listenCloudChanges();
 
