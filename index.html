@@ -92,15 +92,15 @@
             <label><i class="fas fa-link"></i> Link Gambar (Google Drive)</label>
             <input type="url" id="editLinkGambar" placeholder="https://drive.google.com/uc?export=view&id=..." />
             <div style="margin-top:4px;font-size:0.8rem;color:#6a4a5a;">
-                <i class="fas fa-info-circle"></i> Paste link dari Google Drive
+                <i class="fas fa-info-circle"></i> Upload gambar ke Drive, copy link, paste di sini
             </div>
         </div>
         
         <div class="form-group">
-            <label><i class="fas fa-image"></i> Ganti Gambar (opsional)</label>
+            <label><i class="fas fa-image"></i> Upload Gambar (alternatif)</label>
             <input type="file" id="editGambar" accept="image/*" />
             <div style="margin-top:4px;font-size:0.8rem;color:#6a4a5a;">
-                <i class="fas fa-info-circle"></i> Kosongkan jika tidak ingin mengganti gambar
+                <i class="fas fa-info-circle"></i> Atau upload langsung dari komputer (gambar akan tersimpan sebagai Base64)
             </div>
         </div>
         
@@ -152,10 +152,10 @@
         </div>
         
         <div class="form-group">
-            <label><i class="fas fa-image"></i> Ganti Screenshot (opsional)</label>
+            <label><i class="fas fa-image"></i> Upload Screenshot (alternatif)</label>
             <input type="file" id="editTestimoniGambar" accept="image/*" />
             <div style="margin-top:4px;font-size:0.8rem;color:#6a4a5a;">
-                <i class="fas fa-info-circle"></i> Upload screenshot chat WA
+                <i class="fas fa-info-circle"></i> Upload langsung dari komputer (gambar akan tersimpan sebagai Base64)
             </div>
         </div>
         
@@ -220,7 +220,7 @@
                     <input type="url" id="produkLinkGambar" placeholder="https://drive.google.com/uc?export=view&id=..." />
                     <div style="font-size:0.8rem;color:#6a4a5a;margin-top:4px;">
                         <i class="fas fa-info-circle"></i> 
-                        Upload ke Drive, copy link, paste di sini.
+                        Upload gambar ke Google Drive, copy link, paste di sini.
                         <br>Format: <code>https://drive.google.com/uc?export=view&id=XXXX</code>
                     </div>
                     
@@ -335,15 +335,15 @@
 
                 <div class="admin-form-group">
                     <label><i class="fab fa-whatsapp"></i> Nomor WhatsApp</label>
-                    <input type="text" id="webWhatsApp" placeholder="081234567890" value="08179897500" />
+                    <input type="text" id="webWhatsApp" placeholder="628179897500" value="628179897500" />
                     <div style="font-size:0.8rem;color:#6a4a5a;margin-top:4px;">
                         <i class="fas fa-info-circle"></i> 
-                        Masukkan nomor WA tanpa tanda + atau spasi
+                        Masukkan nomor WA dengan format 628xxx (tanpa tanda +)
                     </div>
                 </div>
 
                 <div class="admin-form-group">
-                    <label><i class="fas fa-image"></i> Gambar Hero (opsional)</label>
+                    <label><i class="fas fa-image"></i> Gambar Hero</label>
                     <input type="file" id="webHeroImage" accept="image/*" />
                     <div style="font-size:0.8rem;color:#6a4a5a;margin-top:4px;">
                         <i class="fas fa-info-circle"></i> 
@@ -410,7 +410,7 @@
     <div class="cta-bottom">
         <h2 id="ctaTitle"><i class="fas fa-heart" style="color:#f8bbd0;"></i> Siap Glowing?</h2>
         <p id="ctaDesc">Konsultasikan kebutuhan kulitmu dan dapatkan rekomendasi produk terbaik!</p>
-        <a href="https://wa.me/628179897500?text=Halo%20saya%20ingin%20konsultasi%20skincare" target="_blank" class="btn-cta-light" id="waLink">
+        <a href="https://api.whatsapp.com/send?phone=628179897500" target="_blank" class="btn-cta-light" id="waLink">
             <i class="fab fa-whatsapp"></i> Chat via WhatsApp
         </a>
     </div>
