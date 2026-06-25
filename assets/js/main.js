@@ -1,14 +1,14 @@
 // ============================================================
-// FIREBASE CONFIG - GANTI DENGAN KONFIGURASI ANDA
+// FIREBASE CONFIG - KONFIGURASI DARI FIREBASE ANDA
 // ============================================================
 const firebaseConfig = {
-    apiKey: "AIzaSyD...", // GANTI DENGAN PUNYA ANDA
-    authDomain: "glow-beauty.firebaseapp.com",
-    databaseURL: "https://glow-beauty-default-rtdb.firebaseio.com",
-    projectId: "glow-beauty",
-    storageBucket: "glow-beauty.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "1:123456789:web:abcdef..."
+    apiKey: "AIzaSyAvP3XWnECZe3wRyjQ4Hkxn45-_PSjOV9g",
+    authDomain: "glow-beauty-8b15a.firebaseapp.com",
+    databaseURL: "https://glow-beauty-8b15a-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "glow-beauty-8b15a",
+    storageBucket: "glow-beauty-8b15a.firebasestorage.app",
+    messagingSenderId: "704960864781",
+    appId: "1:704960864781:web:bb3584e49e3bcd22746b44"
 };
 
 // Inisialisasi Firebase
