@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Wabil Beauty - Skincare & Kecantikan</title>
+    <title>Glow Beauty - Skincare & Kecantikan</title>
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -23,7 +23,7 @@
     <div class="container header-content">
         <div class="logo">
             <i class="fas fa-spa"></i>
-            <span id="webName">Wabil<span style="color:#d81b60;">Beauty</span></span>
+            <span id="webName">Glow<span style="color:#d81b60;">Beauty</span></span>
         </div>
         <nav class="nav-links">
             <a href="#home"><i class="fas fa-home"></i> Beranda</a>
@@ -31,9 +31,13 @@
             <a href="#keunggulan"><i class="fas fa-star"></i> Keunggulan</a>
             <a href="#testimoni"><i class="fas fa-comment"></i> Testimoni</a>
             <a href="#kontak" class="btn-wa"><i class="fab fa-whatsapp"></i> Hubungi</a>
-            <a href="https://www.instagram.com/istara3025?igsh=cjA2Zm94czBibDdj" target="_blank" class="btn-ig"><i class="fab fa-instagram"></i> Instagram</a>
+            <a href="https://www.instagram.com/username" target="_blank" class="btn-ig"><i class="fab fa-instagram"></i> Instagram</a>
             <span class="admin-toggle" onclick="openLogin()"><i class="fas fa-user-shield"></i> Admin</span>
             <span class="storage-info"><i class="fas fa-database"></i> <span id="storageCount">0</span> produk</span>
+            <span class="sync-status" id="syncStatus">
+                <i class="fas fa-cloud"></i>
+                <span id="syncText">Tersinkron</span>
+            </span>
         </nav>
     </div>
 </header>
@@ -45,11 +49,11 @@
         <p>Masukkan username dan password untuk mengelola</p>
         <div class="form-group">
             <label><i class="fas fa-user"></i> Username</label>
-            <input type="text" id="loginUser" placeholder="" value="" />
+            <input type="text" id="loginUser" placeholder="admin" value="admin" />
         </div>
         <div class="form-group">
             <label><i class="fas fa-key"></i> Password</label>
-            <input type="password" id="loginPass" placeholder="" value="" />
+            <input type="password" id="loginPass" placeholder="••••••••" value="admin123" />
         </div>
         <button class="btn-login" onclick="login()"><i class="fas fa-sign-in-alt"></i> Login</button>
         <div class="error-msg" id="loginError">❌ Username atau password salah!</div>
@@ -155,6 +159,7 @@
             <div>
                 <button class="btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
                 <button class="btn-ubah-password" onclick="ubahPassword()"><i class="fas fa-key"></i> Ganti Password</button>
+                <button class="btn-sync-cloud" onclick="manualSync()"><i class="fas fa-cloud-upload-alt"></i> Sinkron</button>
                 <button class="btn-reset" onclick="resetAllData()"><i class="fas fa-trash"></i> Reset</button>
                 <button class="btn-export" onclick="exportData()"><i class="fas fa-download"></i> Backup</button>
                 <button class="btn-import" onclick="document.getElementById('importFile').click()">
@@ -231,7 +236,6 @@
                     <i class="fas fa-comment-dots" style="color:#d81b60;"></i> Kelola Testimoni
                 </h4>
                 
-                <!-- Form Tambah Testimoni -->
                 <div class="admin-grid" style="margin-bottom:20px;">
                     <div class="admin-form-group">
                         <label><i class="fas fa-user"></i> Nama Pelanggan</label>
@@ -263,7 +267,6 @@
                     </div>
                 </div>
 
-                <!-- Daftar Testimoni -->
                 <h4 style="color:#4a1a3a;margin:20px 0 12px;">
                     <i class="fas fa-list"></i> Daftar Testimoni
                 </h4>
@@ -351,12 +354,12 @@
 
 <!-- ===== KEUNGGULAN ===== -->
 <div class="container" id="keunggulan">
-    <h2 class="section-title"><i class="fas fa-medal"></i> Kenapa Wabil Beauty?</h2>
+    <h2 class="section-title"><i class="fas fa-medal"></i> Kenapa Glow Beauty?</h2>
     <div class="grid-keunggulan">
         <div class="card-keunggulan"><i class="fas fa-leaf"></i><h4>Bahan Alami</h4><p>Terbuat dari bahan herbal pilihan</p></div>
         <div class="card-keunggulan"><i class="fas fa-flask"></i><h4>Teruji Klinis</h4><p>Dermatologist tested</p></div>
-        <div class="card-keunggulan"><i class="fas fa-shipping-fast"></i><h4>Pengiriman Cepat</h4><p>Siap antar</p></div>
-        <div class="card-keunggulan"><i class="fas fa-hand-holding-heart"></i><h4>Ramah</h4><p>Bebas Konsultasi</p></div>
+        <div class="card-keunggulan"><i class="fas fa-shipping-fast"></i><h4>Pengiriman Cepat</h4><p>Siap antar dalam 1-2 jam</p></div>
+        <div class="card-keunggulan"><i class="fas fa-hand-holding-heart"></i><h4>Garansi 100%</h4><p>Uang kembali jika tidak puas</p></div>
     </div>
 </div>
 
@@ -364,9 +367,7 @@
 <div class="container" id="testimoni">
     <h2 class="section-title"><i class="fas fa-user-check"></i> Testimoni Pelanggan</h2>
     <p class="subtitle">Apa kata mereka tentang produk kami</p>
-    <div class="testimoni-grid" id="testimoniGrid">
-        <!-- Akan diisi oleh JavaScript -->
-    </div>
+    <div class="testimoni-grid" id="testimoniGrid"></div>
 </div>
 
 <!-- ===== CTA ===== -->
@@ -374,7 +375,7 @@
     <div class="cta-bottom">
         <h2 id="ctaTitle"><i class="fas fa-heart" style="color:#f8bbd0;"></i> Siap Glowing?</h2>
         <p id="ctaDesc">Konsultasikan kebutuhan kulitmu dan dapatkan rekomendasi produk terbaik!</p>
-        <a href="https://wa.me/628179897500?text=Halo%20saya%20ingin%20konsultasi%20skincare" target="_blank" class="btn-cta-light" id="waLink">
+        <a href="https://wa.me/6281234567890?text=Halo%20saya%20ingin%20konsultasi%20skincare" target="_blank" class="btn-cta-light" id="waLink">
             <i class="fab fa-whatsapp"></i> Chat via WhatsApp
         </a>
     </div>
@@ -385,18 +386,22 @@
     <div class="container footer-content">
         <div class="copy">&copy; 2025 <span id="footerName">Glow Beauty</span>. All rights reserved.</div>
         <div class="social-icons">
-            <a href="https://www.instagram.com/istara3025?igsh=cjA2Zm94czBibDdj" target="_blank" title="Instagram">
+            <a href="https://www.instagram.com/username" target="_blank" title="Instagram">
                 <i class="fab fa-instagram"></i>
             </a>
-            <!--<a href="#" target="_blank" title="TikTok">
+            <a href="#" target="_blank" title="TikTok">
                 <i class="fab fa-tiktok"></i>
             </a>
             <a href="#" target="_blank" title="YouTube">
                 <i class="fab fa-youtube"></i>
-            </a>-->
+            </a>
         </div>
     </div>
 </footer>
+
+<!-- ===== FIREBASE ===== -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 
 <!-- ===== JAVASCRIPT ===== -->
 <script src="assets/js/main.js"></script>
