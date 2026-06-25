@@ -21,7 +21,7 @@ const database = firebase.database();
 const STORAGE_KEY = 'glowBeautyData';
 
 // ============================================================
-// DATA DEFAULT - KOSONG! TIDAK ADA PRODUK DEFAULT
+// DATA DEFAULT - KOSONG!
 // ============================================================
 const defaultData = {
     categories: ['Skincare', 'Makeup', 'Body Care', 'Hair Care'],
@@ -58,19 +58,16 @@ let cloudSyncEnabled = true;
 // ============================================================
 function compressImage(file, maxWidth, maxHeight, quality) {
     return new Promise((resolve, reject) => {
-        // Validasi file
         if (!file) {
             reject('Tidak ada file');
             return;
         }
 
-        // Cek ukuran file (maks 1MB)
         if (file.size > 1024 * 1024) {
             reject('File terlalu besar! Maksimal 1MB. Ukuran: ' + (file.size / 1024 / 1024).toFixed(2) + ' MB');
             return;
         }
 
-        // Cek format file
         const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
         if (!validTypes.includes(file.type)) {
             reject('Format tidak didukung! Gunakan JPG, PNG, GIF, atau WebP.');
@@ -84,21 +81,18 @@ function compressImage(file, maxWidth, maxHeight, quality) {
                 let width = img.width;
                 let height = img.height;
                 
-                // Resize jika terlalu besar
                 if (width > maxWidth || height > maxHeight) {
                     const ratio = Math.min(maxWidth / width, maxHeight / height);
                     width = Math.round(width * ratio);
                     height = Math.round(height * ratio);
                 }
                 
-                // Kompres ke canvas
                 const canvas = document.createElement('canvas');
                 canvas.width = width;
                 canvas.height = height;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
                 
-                // Konversi ke Base64 dengan kualitas yang ditentukan
                 const compressed = canvas.toDataURL('image/jpeg', quality);
                 resolve(compressed);
             };
@@ -112,6 +106,43 @@ function compressImage(file, maxWidth, maxHeight, quality) {
         };
         reader.readAsDataURL(file);
     });
+}
+
+// ============================================================
+// VALIDASI LINK GOOGLE DRIVE
+// ============================================================
+function isValidDriveLink(url) {
+    if (!url) return false;
+    return url.includes('drive.google.com/uc?export=view') || 
+           url.includes('lh3.googleusercontent.com/d/') ||
+           url.includes('drive.google.com/file/d/');
+}
+
+function convertDriveLink(url) {
+    // Konversi link drive ke format embed
+    if (url.includes('file/d/')) {
+        const match = url.match(/\/d\/([^\/]+)/);
+        if (match) {
+            return 'https://drive.google.com/uc?export=view&id=' + match[1];
+        }
+    }
+    return url;
+}
+
+// ============================================================
+// FUNGSI GET WA NUMBER
+// ============================================================
+function getWaNumber() {
+    // Ambil dari webSettings atau default
+    let number = webSettings.whatsapp || '08179897500';
+    // Hanya ambil angka
+    number = number.replace(/\D/g, '');
+    return number;
+}
+
+function getWaLink() {
+    const number = getWaNumber();
+    return 'https://wa.me/' + number;
 }
 
 // ============================================================
@@ -694,7 +725,7 @@ function renderProducts() {
 }
 
 // ============================================================
-// TAMBAH PRODUK
+// TAMBAH PRODUK (DENGAN LINK DRIVE)
 // ============================================================
 function tambahProduk() {
     if (!isLoggedIn) {
@@ -707,6 +738,7 @@ function tambahProduk() {
     const harga = document.getElementById('produkHarga').value.trim();
     const kategori = document.getElementById('produkKategori').value;
     const fileInput = document.getElementById('produkGambar');
+    const linkGambar = document.getElementById('produkLinkGambar').value.trim();
 
     if (!nama || !harga) {
         alert('⚠️ Mohon isi Nama dan Harga produk!');
@@ -715,7 +747,24 @@ function tambahProduk() {
 
     let gambar = 'https://via.placeholder.com/150/d81b60/ffffff?text=Produk';
 
-    if (fileInput.files && fileInput.files[0]) {
+    // 1. Prioritaskan Link Google Drive
+    if (linkGambar) {
+        // Konversi link jika perlu
+        let finalLink = convertDriveLink(linkGambar);
+        if (isValidDriveLink(finalLink) || finalLink.includes('https://')) {
+            gambar = finalLink;
+        } else {
+            alert('⚠️ Link tidak valid! Gunakan link dari Google Drive.\nFormat: https://drive.google.com/uc?export=view&id=XXXX');
+            return;
+        }
+    } 
+    // 2. Jika ada file yang diupload
+    else if (fileInput.files && fileInput.files[0]) {
+        const file = fileInput.files[0];
+        if (file.size > 2 * 1024 * 1024) {
+            alert('⚠️ File terlalu besar! Maksimal 2MB.');
+            return;
+        }
         const reader = new FileReader();
         reader.onload = function(e) {
             gambar = e.target.result;
@@ -727,18 +776,19 @@ function tambahProduk() {
             alert('✅ Produk berhasil ditambahkan!');
         };
         reader.readAsDataURL(fileInput.files[0]);
-    } else {
-        const newProduct = { id: nextId++, nama, harga, kategori, gambar };
-        products.push(newProduct);
-        saveData();
-        renderAll();
-        resetFormProduk();
-        alert('✅ Produk berhasil ditambahkan!');
+        return;
     }
+
+    const newProduct = { id: nextId++, nama, harga, kategori, gambar };
+    products.push(newProduct);
+    saveData();
+    renderAll();
+    resetFormProduk();
+    alert('✅ Produk berhasil ditambahkan!');
 }
 
 // ============================================================
-// EDIT PRODUK
+// EDIT PRODUK (DENGAN LINK DRIVE)
 // ============================================================
 function editProduk(id) {
     if (!isLoggedIn) {
@@ -762,6 +812,14 @@ function editProduk(id) {
         <option value="${k}" ${k === produk.kategori ? 'selected' : ''}>${k}</option>
     `).join('');
 
+    // Isi link gambar jika ada
+    const linkInput = document.getElementById('editLinkGambar');
+    if (produk.gambar && (produk.gambar.includes('drive.google.com') || produk.gambar.includes('lh3.googleusercontent.com'))) {
+        linkInput.value = produk.gambar;
+    } else {
+        linkInput.value = '';
+    }
+
     document.getElementById('editGambar').value = '';
     document.getElementById('editModal').classList.add('active');
 }
@@ -769,6 +827,7 @@ function editProduk(id) {
 function closeEdit() {
     document.getElementById('editModal').classList.remove('active');
     document.getElementById('editGambar').value = '';
+    document.getElementById('editLinkGambar').value = '';
 }
 
 function simpanEdit() {
@@ -777,6 +836,7 @@ function simpanEdit() {
     const harga = document.getElementById('editHarga').value.trim();
     const kategori = document.getElementById('editKategori').value;
     const fileInput = document.getElementById('editGambar');
+    const linkGambar = document.getElementById('editLinkGambar').value.trim();
 
     if (!nama || !harga) {
         alert('⚠️ Nama dan Harga harus diisi!');
@@ -803,7 +863,25 @@ function simpanEdit() {
         alert('✅ Produk berhasil diupdate!');
     }
 
+    // 1. Prioritaskan Link Google Drive
+    if (linkGambar) {
+        let finalLink = convertDriveLink(linkGambar);
+        if (isValidDriveLink(finalLink) || finalLink.includes('https://')) {
+            simpanData(finalLink);
+            return;
+        } else {
+            alert('⚠️ Link tidak valid! Gunakan link dari Google Drive.');
+            return;
+        }
+    }
+
+    // 2. Jika ada file yang diupload
     if (fileInput.files && fileInput.files[0]) {
+        const file = fileInput.files[0];
+        if (file.size > 2 * 1024 * 1024) {
+            alert('⚠️ File terlalu besar! Maksimal 2MB.');
+            return;
+        }
         const reader = new FileReader();
         reader.onload = function(e) {
             simpanData(e.target.result);
@@ -835,6 +913,7 @@ function resetFormProduk() {
     document.getElementById('produkNama').value = '';
     document.getElementById('produkHarga').value = '';
     document.getElementById('produkGambar').value = '';
+    document.getElementById('produkLinkGambar').value = '';
 }
 
 // ============================================================
@@ -898,6 +977,7 @@ function tambahTestimoni() {
     const text = document.getElementById('testimoniText').value.trim();
     const rating = parseInt(document.getElementById('testimoniRating').value);
     const fileInput = document.getElementById('testimoniGambar');
+    const linkGambar = document.getElementById('testimoniLinkGambar').value.trim();
 
     if (!nama || !text) {
         alert('⚠️ Mohon isi Nama dan Isi testimoni!');
@@ -906,7 +986,23 @@ function tambahTestimoni() {
 
     let gambar = '';
 
-    if (fileInput.files && fileInput.files[0]) {
+    // 1. Prioritaskan Link Google Drive
+    if (linkGambar) {
+        let finalLink = convertDriveLink(linkGambar);
+        if (isValidDriveLink(finalLink) || finalLink.includes('https://')) {
+            gambar = finalLink;
+        } else {
+            alert('⚠️ Link tidak valid! Gunakan link dari Google Drive.');
+            return;
+        }
+    } 
+    // 2. Jika ada file yang diupload
+    else if (fileInput.files && fileInput.files[0]) {
+        const file = fileInput.files[0];
+        if (file.size > 2 * 1024 * 1024) {
+            alert('⚠️ File terlalu besar! Maksimal 2MB.');
+            return;
+        }
         const reader = new FileReader();
         reader.onload = function(e) {
             gambar = e.target.result;
@@ -918,14 +1014,15 @@ function tambahTestimoni() {
             alert('✅ Testimoni berhasil ditambahkan!');
         };
         reader.readAsDataURL(fileInput.files[0]);
-    } else {
-        const newTestimonial = { id: nextTestimonialId++, nama, text, rating, gambar: '' };
-        testimonials.push(newTestimonial);
-        saveData();
-        renderAll();
-        resetFormTestimoni();
-        alert('✅ Testimoni berhasil ditambahkan!');
+        return;
     }
+
+    const newTestimonial = { id: nextTestimonialId++, nama, text, rating, gambar };
+    testimonials.push(newTestimonial);
+    saveData();
+    renderAll();
+    resetFormTestimoni();
+    alert('✅ Testimoni berhasil ditambahkan!');
 }
 
 // ============================================================
@@ -948,6 +1045,15 @@ function editTestimoni(id) {
     document.getElementById('editTestimoniNama').value = testi.nama;
     document.getElementById('editTestimoniText').value = testi.text;
     document.getElementById('editTestimoniRating').value = testi.rating;
+    
+    // Isi link gambar jika ada
+    const linkInput = document.getElementById('editTestimoniLinkGambar');
+    if (testi.gambar && (testi.gambar.includes('drive.google.com') || testi.gambar.includes('lh3.googleusercontent.com'))) {
+        linkInput.value = testi.gambar;
+    } else {
+        linkInput.value = '';
+    }
+    
     document.getElementById('editTestimoniGambar').value = '';
     document.getElementById('editTestimoniModal').classList.add('active');
 }
@@ -955,6 +1061,7 @@ function editTestimoni(id) {
 function closeEditTestimoni() {
     document.getElementById('editTestimoniModal').classList.remove('active');
     document.getElementById('editTestimoniGambar').value = '';
+    document.getElementById('editTestimoniLinkGambar').value = '';
 }
 
 function simpanEditTestimoni() {
@@ -963,6 +1070,7 @@ function simpanEditTestimoni() {
     const text = document.getElementById('editTestimoniText').value.trim();
     const rating = parseInt(document.getElementById('editTestimoniRating').value);
     const fileInput = document.getElementById('editTestimoniGambar');
+    const linkGambar = document.getElementById('editTestimoniLinkGambar').value.trim();
 
     if (!nama || !text) {
         alert('⚠️ Nama dan Isi testimoni harus diisi!');
@@ -989,7 +1097,25 @@ function simpanEditTestimoni() {
         alert('✅ Testimoni berhasil diupdate!');
     }
 
+    // 1. Prioritaskan Link Google Drive
+    if (linkGambar) {
+        let finalLink = convertDriveLink(linkGambar);
+        if (isValidDriveLink(finalLink) || finalLink.includes('https://')) {
+            simpanData(finalLink);
+            return;
+        } else {
+            alert('⚠️ Link tidak valid! Gunakan link dari Google Drive.');
+            return;
+        }
+    }
+
+    // 2. Jika ada file yang diupload
     if (fileInput.files && fileInput.files[0]) {
+        const file = fileInput.files[0];
+        if (file.size > 2 * 1024 * 1024) {
+            alert('⚠️ File terlalu besar! Maksimal 2MB.');
+            return;
+        }
         const reader = new FileReader();
         reader.onload = function(e) {
             simpanData(e.target.result);
@@ -1022,10 +1148,11 @@ function resetFormTestimoni() {
     document.getElementById('testimoniText').value = '';
     document.getElementById('testimoniRating').value = '5';
     document.getElementById('testimoniGambar').value = '';
+    document.getElementById('testimoniLinkGambar').value = '';
 }
 
 // ============================================================
-// PENGATURAN WEB (DENGAN KOMPRESI GAMBAR)
+// PENGATURAN WEB
 // ============================================================
 function applyWebSettings() {
     if (webSettings.namaToko) {
@@ -1101,7 +1228,6 @@ function simpanPengaturanWeb() {
     if (fileInput.files && fileInput.files[0]) {
         const file = fileInput.files[0];
         
-        // Validasi dan kompres gambar
         compressImage(file, 1200, 600, 0.7)
             .then((compressedBase64) => {
                 simpanWeb(compressedBase64);
