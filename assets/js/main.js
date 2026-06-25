@@ -166,7 +166,7 @@ function isValidDriveLink(input) {
 // ============================================================
 function getPassword() {
     const saved = localStorage.getItem(PASSWORD_KEY);
-    return saved || 'admin123';
+    return saved || 'istiireng123';
 }
 
 function setPassword(newPass) {
