@@ -25,9 +25,9 @@ const STORAGE_KEY = 'glowBeautyData';
 // ============================================================
 const defaultData = {
     categories: ['Skincare', 'Makeup', 'Body Care', 'Hair Care'],
-    products: [],  // ← KOSONG! TIDAK ADA DEFAULT PRODUK
+    products: [],
     nextId: 1,
-    testimonials: [],  // ← KOSONG! TIDAK ADA DEFAULT TESTIMONI
+    testimonials: [],
     nextTestimonialId: 1,
     webSettings: {
         namaToko: 'GlowBeauty',
@@ -35,7 +35,7 @@ const defaultData = {
         heroDesc: 'Temukan rangkaian skincare dan kecantikan premium untuk kulit glowing dan sehat. Aman, halal, dan teruji dermatologis.',
         ctaTitle: '<i class="fas fa-heart" style="color:#f8bbd0;"></i> Siap Glowing?',
         ctaDesc: 'Konsultasikan kebutuhan kulitmu dan dapatkan rekomendasi produk terbaik!',
-        whatsapp: '6281234567890',
+        whatsapp: '08179897500',
         heroImage: 'https://via.placeholder.com/500x400/d81b60/ffffff?text=Glow+Beauty'
     }
 };
@@ -52,6 +52,67 @@ let webSettings = {};
 let isLoggedIn = false;
 let isCloudLoading = false;
 let cloudSyncEnabled = true;
+
+// ============================================================
+// FUNGSI KOMPRESI GAMBAR
+// ============================================================
+function compressImage(file, maxWidth, maxHeight, quality) {
+    return new Promise((resolve, reject) => {
+        // Validasi file
+        if (!file) {
+            reject('Tidak ada file');
+            return;
+        }
+
+        // Cek ukuran file (maks 1MB)
+        if (file.size > 1024 * 1024) {
+            reject('File terlalu besar! Maksimal 1MB. Ukuran: ' + (file.size / 1024 / 1024).toFixed(2) + ' MB');
+            return;
+        }
+
+        // Cek format file
+        const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (!validTypes.includes(file.type)) {
+            reject('Format tidak didukung! Gunakan JPG, PNG, GIF, atau WebP.');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                let width = img.width;
+                let height = img.height;
+                
+                // Resize jika terlalu besar
+                if (width > maxWidth || height > maxHeight) {
+                    const ratio = Math.min(maxWidth / width, maxHeight / height);
+                    width = Math.round(width * ratio);
+                    height = Math.round(height * ratio);
+                }
+                
+                // Kompres ke canvas
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // Konversi ke Base64 dengan kualitas yang ditentukan
+                const compressed = canvas.toDataURL('image/jpeg', quality);
+                resolve(compressed);
+            };
+            img.onerror = function() {
+                reject('Gagal memuat gambar');
+            };
+            img.src = e.target.result;
+        };
+        reader.onerror = function() {
+            reject('Gagal membaca file');
+        };
+        reader.readAsDataURL(file);
+    });
+}
 
 // ============================================================
 // PASSWORD MANAGEMENT
@@ -155,7 +216,7 @@ function loadFromCloud() {
             if (data) {
                 console.log('✅ Data loaded from Firebase');
                 categories = data.categories || defaultData.categories;
-                products = data.products || [];  // ← PASTIKAN KOSONG JIKA TIDAK ADA
+                products = data.products || [];
                 nextId = data.nextId || 1;
                 testimonials = data.testimonials || [];
                 nextTestimonialId = data.nextTestimonialId || 1;
@@ -166,7 +227,6 @@ function loadFromCloud() {
                 applyWebSettings();
                 updateSyncStatus('synced');
             } else {
-                // Jika Firebase kosong, upload data kosong
                 saveToCloud();
                 updateSyncStatus('synced');
             }
@@ -234,7 +294,7 @@ function manualSync() {
 }
 
 // ============================================================
-// CLEAR ALL DATA (HAPUS SEMUA DATA PERMANEN)
+// CLEAR ALL DATA
 // ============================================================
 function clearAllData() {
     if (!isLoggedIn) {
@@ -246,7 +306,6 @@ function clearAllData() {
     if (!confirm('⚠️ Yakin ingin menghapus SEMUA data? (Produk, Testimoni, Kategori, Pengaturan Web)\n\nData akan dihapus dari LocalStorage dan Firebase secara permanen!\nTINDAKAN INI TIDAK DAPAT DIBATALKAN!')) return;
     if (!confirm('Konfirmasi kedua: Hapus semua data?')) return;
     
-    // Kosongkan semua data
     categories = ['Skincare', 'Makeup', 'Body Care', 'Hair Care'];
     products = [];
     testimonials = [];
@@ -258,14 +317,12 @@ function clearAllData() {
         heroDesc: 'Temukan rangkaian skincare dan kecantikan premium untuk kulit glowing dan sehat. Aman, halal, dan teruji dermatologis.',
         ctaTitle: '<i class="fas fa-heart" style="color:#f8bbd0;"></i> Siap Glowing?',
         ctaDesc: 'Konsultasikan kebutuhan kulitmu dan dapatkan rekomendasi produk terbaik!',
-        whatsapp: '6281234567890',
+        whatsapp: '08179897500',
         heroImage: 'https://via.placeholder.com/500x400/d81b60/ffffff?text=Glow+Beauty'
     };
     
-    // Simpan data kosong ke LocalStorage
     saveData();
     
-    // Simpan data kosong ke Firebase
     const emptyData = {
         categories: categories,
         products: [],
@@ -417,6 +474,14 @@ function importData(event) {
     };
     reader.readAsText(file);
     event.target.value = '';
+}
+
+// ============================================================
+// TOGGLE MOBILE MENU
+// ============================================================
+function toggleMobileMenu() {
+    const nav = document.getElementById('navLinks');
+    nav.classList.toggle('show');
 }
 
 // ============================================================
@@ -960,7 +1025,7 @@ function resetFormTestimoni() {
 }
 
 // ============================================================
-// PENGATURAN WEB
+// PENGATURAN WEB (DENGAN KOMPRESI GAMBAR)
 // ============================================================
 function applyWebSettings() {
     if (webSettings.namaToko) {
@@ -995,7 +1060,7 @@ function applyWebSettings() {
     document.getElementById('webHeroDesc').value = webSettings.heroDesc || '';
     document.getElementById('webCtaTitle').value = webSettings.ctaTitle || '';
     document.getElementById('webCtaDesc').value = webSettings.ctaDesc || '';
-    document.getElementById('webWhatsApp').value = webSettings.whatsapp || '';
+    document.getElementById('webWhatsApp').value = webSettings.whatsapp || '08179897500';
 }
 
 function simpanPengaturanWeb() {
@@ -1024,7 +1089,7 @@ function simpanPengaturanWeb() {
         webSettings.heroDesc = heroDesc || defaultData.webSettings.heroDesc;
         webSettings.ctaTitle = ctaTitle || defaultData.webSettings.ctaTitle;
         webSettings.ctaDesc = ctaDesc || defaultData.webSettings.ctaDesc;
-        webSettings.whatsapp = whatsapp || defaultData.webSettings.whatsapp;
+        webSettings.whatsapp = whatsapp || '08179897500';
         if (gambarBaru) {
             webSettings.heroImage = gambarBaru;
         }
@@ -1034,11 +1099,17 @@ function simpanPengaturanWeb() {
     }
 
     if (fileInput.files && fileInput.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            simpanWeb(e.target.result);
-        };
-        reader.readAsDataURL(fileInput.files[0]);
+        const file = fileInput.files[0];
+        
+        // Validasi dan kompres gambar
+        compressImage(file, 1200, 600, 0.7)
+            .then((compressedBase64) => {
+                simpanWeb(compressedBase64);
+            })
+            .catch((error) => {
+                alert('⚠️ ' + error);
+                fileInput.value = '';
+            });
     } else {
         simpanWeb(null);
     }
@@ -1086,4 +1157,11 @@ document.getElementById('loginUser').addEventListener('keydown', function(e) {
 });
 document.getElementById('kategoriInput').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') tambahKategori();
+});
+
+// Close mobile menu on link click
+document.querySelectorAll('.nav-links a').forEach(link => {
+    link.addEventListener('click', function() {
+        document.getElementById('navLinks').classList.remove('show');
+    });
 });
