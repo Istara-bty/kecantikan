@@ -21,25 +21,14 @@ const database = firebase.database();
 const STORAGE_KEY = 'glowBeautyData';
 
 // ============================================================
-// DATA DEFAULT
+// DATA DEFAULT - KOSONG! TIDAK ADA PRODUK DEFAULT
 // ============================================================
 const defaultData = {
     categories: ['Skincare', 'Makeup', 'Body Care', 'Hair Care'],
-    products: [
-        { id: 1, nama: 'Serum Vitamin C', harga: 'Rp 85.000', kategori: 'Skincare', gambar: 'https://via.placeholder.com/150/d81b60/ffffff?text=Serum' },
-        { id: 2, nama: 'Moisturizer Glow', harga: 'Rp 65.000', kategori: 'Skincare', gambar: 'https://via.placeholder.com/150/ad1457/ffffff?text=Moist' },
-        { id: 3, nama: 'Lipstick Matte', harga: 'Rp 45.000', kategori: 'Makeup', gambar: 'https://via.placeholder.com/150/880e4f/ffffff?text=Lipstick' },
-        { id: 4, nama: 'Body Lotion', harga: 'Rp 55.000', kategori: 'Body Care', gambar: 'https://via.placeholder.com/150/d81b60/ffffff?text=Lotion' },
-        { id: 5, nama: 'Shampoo Keratin', harga: 'Rp 70.000', kategori: 'Hair Care', gambar: 'https://via.placeholder.com/150/ad1457/ffffff?text=Shampoo' },
-        { id: 6, nama: 'Sunscreen SPF 50', harga: 'Rp 75.000', kategori: 'Skincare', gambar: 'https://via.placeholder.com/150/880e4f/ffffff?text=Sunscreen' }
-    ],
-    nextId: 7,
-    testimonials: [
-        { id: 1, nama: 'Sarah, 26', text: 'Kulitku jadi glowing setelah pakai serum ini. Sudah repeat order 3x!', rating: 5, gambar: '' },
-        { id: 2, nama: 'Mika, 30', text: 'Produk original, hasilnya nyata. Makin percaya diri sekarang!', rating: 5, gambar: '' },
-        { id: 3, nama: 'Rina, 24', text: 'Rekomendasi dari teman, ternyata bagus banget. Skincare favorit!', rating: 5, gambar: '' }
-    ],
-    nextTestimonialId: 4,
+    products: [],  // ← KOSONG! TIDAK ADA DEFAULT PRODUK
+    nextId: 1,
+    testimonials: [],  // ← KOSONG! TIDAK ADA DEFAULT TESTIMONI
+    nextTestimonialId: 1,
     webSettings: {
         namaToko: 'GlowBeauty',
         heroTitle: 'Rawat Kulitmu <br/><span>Dengan Produk Terbaik</span>',
@@ -166,10 +155,10 @@ function loadFromCloud() {
             if (data) {
                 console.log('✅ Data loaded from Firebase');
                 categories = data.categories || defaultData.categories;
-                products = data.products || defaultData.products;
-                nextId = data.nextId || defaultData.nextId;
-                testimonials = data.testimonials || defaultData.testimonials;
-                nextTestimonialId = data.nextTestimonialId || defaultData.nextTestimonialId;
+                products = data.products || [];  // ← PASTIKAN KOSONG JIKA TIDAK ADA
+                nextId = data.nextId || 1;
+                testimonials = data.testimonials || [];
+                nextTestimonialId = data.nextTestimonialId || 1;
                 webSettings = data.webSettings || defaultData.webSettings;
                 
                 saveData();
@@ -177,6 +166,7 @@ function loadFromCloud() {
                 applyWebSettings();
                 updateSyncStatus('synced');
             } else {
+                // Jika Firebase kosong, upload data kosong
                 saveToCloud();
                 updateSyncStatus('synced');
             }
@@ -195,27 +185,36 @@ function listenCloudChanges() {
         if (data && !isCloudLoading) {
             console.log('🔄 Real-time update from Firebase');
             
-            const localData = localStorage.getItem(STORAGE_KEY);
-            if (localData) {
-                try {
-                    const local = JSON.parse(localData);
-                    if (data.updatedAt && (!local.updatedAt || data.updatedAt > local.updatedAt)) {
-                        categories = data.categories || defaultData.categories;
-                        products = data.products || defaultData.products;
-                        nextId = data.nextId || defaultData.nextId;
-                        testimonials = data.testimonials || defaultData.testimonials;
-                        nextTestimonialId = data.nextTestimonialId || defaultData.nextTestimonialId;
-                        webSettings = data.webSettings || defaultData.webSettings;
-                        
-                        saveData();
-                        renderAll();
-                        applyWebSettings();
-                        console.log('✅ Synced from cloud');
-                        updateSyncStatus('synced');
-                    }
-                } catch (e) {
-                    console.warn('⚠️ Error parsing local data:', e);
+            try {
+                if (typeof data !== 'object' || data === null) {
+                    console.warn('⚠️ Data dari Firebase tidak valid');
+                    return;
                 }
+                
+                const localData = localStorage.getItem(STORAGE_KEY);
+                if (localData) {
+                    try {
+                        const local = JSON.parse(localData);
+                        if (data.updatedAt && (!local.updatedAt || data.updatedAt > local.updatedAt)) {
+                            categories = data.categories || defaultData.categories;
+                            products = data.products || [];
+                            nextId = data.nextId || 1;
+                            testimonials = data.testimonials || [];
+                            nextTestimonialId = data.nextTestimonialId || 1;
+                            webSettings = data.webSettings || defaultData.webSettings;
+                            
+                            saveData();
+                            renderAll();
+                            applyWebSettings();
+                            console.log('✅ Synced from cloud');
+                            updateSyncStatus('synced');
+                        }
+                    } catch (e) {
+                        console.warn('⚠️ Error parsing local data:', e);
+                    }
+                }
+            } catch (e) {
+                console.warn('⚠️ Error processing Firebase data:', e);
             }
         }
     });
@@ -235,6 +234,62 @@ function manualSync() {
 }
 
 // ============================================================
+// CLEAR ALL DATA (HAPUS SEMUA DATA PERMANEN)
+// ============================================================
+function clearAllData() {
+    if (!isLoggedIn) {
+        alert('⚠️ Login terlebih dahulu!');
+        openLogin();
+        return;
+    }
+    
+    if (!confirm('⚠️ Yakin ingin menghapus SEMUA data? (Produk, Testimoni, Kategori, Pengaturan Web)\n\nData akan dihapus dari LocalStorage dan Firebase secara permanen!\nTINDAKAN INI TIDAK DAPAT DIBATALKAN!')) return;
+    if (!confirm('Konfirmasi kedua: Hapus semua data?')) return;
+    
+    // Kosongkan semua data
+    categories = ['Skincare', 'Makeup', 'Body Care', 'Hair Care'];
+    products = [];
+    testimonials = [];
+    nextId = 1;
+    nextTestimonialId = 1;
+    webSettings = {
+        namaToko: 'GlowBeauty',
+        heroTitle: 'Rawat Kulitmu <br/><span>Dengan Produk Terbaik</span>',
+        heroDesc: 'Temukan rangkaian skincare dan kecantikan premium untuk kulit glowing dan sehat. Aman, halal, dan teruji dermatologis.',
+        ctaTitle: '<i class="fas fa-heart" style="color:#f8bbd0;"></i> Siap Glowing?',
+        ctaDesc: 'Konsultasikan kebutuhan kulitmu dan dapatkan rekomendasi produk terbaik!',
+        whatsapp: '6281234567890',
+        heroImage: 'https://via.placeholder.com/500x400/d81b60/ffffff?text=Glow+Beauty'
+    };
+    
+    // Simpan data kosong ke LocalStorage
+    saveData();
+    
+    // Simpan data kosong ke Firebase
+    const emptyData = {
+        categories: categories,
+        products: [],
+        nextId: 1,
+        testimonials: [],
+        nextTestimonialId: 1,
+        webSettings: webSettings,
+        updatedAt: new Date().toISOString()
+    };
+    
+    database.ref('glowBeautyData').set(emptyData)
+        .then(() => {
+            console.log('✅ Data Firebase dihapus permanen!');
+            renderAll();
+            applyWebSettings();
+            alert('🗑️ Semua data telah dihapus permanen!');
+        })
+        .catch((error) => {
+            console.error('❌ Error clearing Firebase data:', error);
+            alert('⚠️ Gagal menghapus data di Firebase. Silakan coba lagi.');
+        });
+}
+
+// ============================================================
 // LOAD & SAVE DATA
 // ============================================================
 function loadData() {
@@ -244,10 +299,10 @@ function loadData() {
         if (saved) {
             const data = JSON.parse(saved);
             categories = data.categories || defaultData.categories;
-            products = data.products || defaultData.products;
-            testimonials = data.testimonials || defaultData.testimonials;
-            nextId = data.nextId || defaultData.nextId;
-            nextTestimonialId = data.nextTestimonialId || defaultData.nextTestimonialId;
+            products = data.products || [];
+            testimonials = data.testimonials || [];
+            nextId = data.nextId || 1;
+            nextTestimonialId = data.nextTestimonialId || 1;
             webSettings = data.webSettings || defaultData.webSettings;
             console.log('✅ Data loaded from LocalStorage');
             hasLocalData = true;
@@ -258,10 +313,10 @@ function loadData() {
     
     if (!hasLocalData) {
         categories = [...defaultData.categories];
-        products = JSON.parse(JSON.stringify(defaultData.products));
-        testimonials = JSON.parse(JSON.stringify(defaultData.testimonials));
-        nextId = defaultData.nextId;
-        nextTestimonialId = defaultData.nextTestimonialId;
+        products = [];
+        testimonials = [];
+        nextId = 1;
+        nextTestimonialId = 1;
         webSettings = JSON.parse(JSON.stringify(defaultData.webSettings));
         saveData();
     }
@@ -269,7 +324,14 @@ function loadData() {
 
 function saveData() {
     try {
-        const data = { categories, products, nextId, testimonials, nextTestimonialId, webSettings };
+        const data = { 
+            categories, 
+            products: products || [], 
+            nextId, 
+            testimonials: testimonials || [], 
+            nextTestimonialId, 
+            webSettings 
+        };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
         console.log('✅ Data saved to LocalStorage');
         updateStorageCount();
@@ -281,7 +343,7 @@ function saveData() {
 
 function updateStorageCount() {
     const el = document.getElementById('storageCount');
-    if (el) el.textContent = products.length;
+    if (el) el.textContent = products?.length || 0;
 }
 
 // ============================================================
@@ -293,23 +355,31 @@ function resetAllData() {
         openLogin();
         return;
     }
-    if (!confirm('⚠️ Yakin ingin menghapus SEMUA data? Ini tidak bisa dibatalkan!')) return;
-    if (!confirm('Konfirmasi kedua: Hapus semua data?')) return;
+    if (!confirm('⚠️ Yakin ingin mereset data ke default? Data Anda akan hilang!')) return;
+    if (!confirm('Konfirmasi kedua: Reset semua data?')) return;
 
     categories = [...defaultData.categories];
-    products = JSON.parse(JSON.stringify(defaultData.products));
-    testimonials = JSON.parse(JSON.stringify(defaultData.testimonials));
-    nextId = defaultData.nextId;
-    nextTestimonialId = defaultData.nextTestimonialId;
+    products = [];
+    testimonials = [];
+    nextId = 1;
+    nextTestimonialId = 1;
     webSettings = JSON.parse(JSON.stringify(defaultData.webSettings));
     saveData();
     renderAll();
     applyWebSettings();
-    alert('🗑️ Semua data telah direset ke default!');
+    alert('🗑️ Semua data telah direset ke default (kosong)!');
 }
 
 function exportData() {
-    const data = { categories, products, nextId, testimonials, nextTestimonialId, webSettings, exportedAt: new Date().toISOString() };
+    const data = { 
+        categories, 
+        products: products || [], 
+        nextId, 
+        testimonials: testimonials || [], 
+        nextTestimonialId, 
+        webSettings, 
+        exportedAt: new Date().toISOString() 
+    };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -327,12 +397,12 @@ function importData(event) {
     reader.onload = function(e) {
         try {
             const data = JSON.parse(e.target.result);
-            if (data.categories && data.products) {
+            if (data.categories) {
                 categories = data.categories;
-                products = data.products;
+                products = data.products || [];
                 testimonials = data.testimonials || [];
-                nextId = data.nextId || products.length + 1;
-                nextTestimonialId = data.nextTestimonialId || testimonials.length + 1;
+                nextId = data.nextId || 1;
+                nextTestimonialId = data.nextTestimonialId || 1;
                 webSettings = data.webSettings || defaultData.webSettings;
                 saveData();
                 renderAll();
@@ -510,10 +580,29 @@ function renderProducts() {
     const tbody = document.getElementById('productTableBody');
     const totalSpan = document.getElementById('totalProduk');
 
+    if (!products || products.length === 0) {
+        grid.innerHTML = `
+            <div style="grid-column:1/-1;text-align:center;padding:40px;color:#6a4a5a;">
+                <i class="fas fa-box-open" style="font-size:3rem;color:#d81b60;display:block;margin-bottom:16px;"></i>
+                <h3 style="color:#4a1a3a;">Belum ada produk</h3>
+                <p>Tambahkan produk pertama melalui panel admin</p>
+            </div>
+        `;
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" style="text-align:center;padding:20px;color:#6a4a5a;">
+                    <i class="fas fa-box-open"></i> Belum ada produk
+                </td>
+            </tr>
+        `;
+        totalSpan.textContent = '0';
+        return;
+    }
+
     grid.innerHTML = products.map(p => `
         <div class="card-produk">
             <div class="img-wrapper">
-                <img src="${p.gambar}" alt="${p.nama}" onerror="this.src='https://via.placeholder.com/150/d81b60/ffffff?text=${encodeURIComponent(p.nama)}'" />
+                <img src="${p.gambar || 'https://via.placeholder.com/150/d81b60/ffffff?text=Produk'}" alt="${p.nama}" onerror="this.src='https://via.placeholder.com/150/d81b60/ffffff?text=${encodeURIComponent(p.nama)}'" />
             </div>
             <h4>${p.nama}</h4>
             <div class="harga">${p.harga}</div>
@@ -524,7 +613,7 @@ function renderProducts() {
     tbody.innerHTML = products.map((p, index) => `
         <tr>
             <td>${index + 1}</td>
-            <td><img src="${p.gambar}" style="width:40px;height:40px;object-fit:cover;border-radius:10px;" onerror="this.src='https://via.placeholder.com/40/d81b60/ffffff'" /></td>
+            <td><img src="${p.gambar || 'https://via.placeholder.com/40/d81b60/ffffff'}" style="width:40px;height:40px;object-fit:cover;border-radius:10px;" onerror="this.src='https://via.placeholder.com/40/d81b60/ffffff'" /></td>
             <td>${p.nama}</td>
             <td>${p.harga}</td>
             <td>${p.kategori}</td>
@@ -688,6 +777,20 @@ function resetFormProduk() {
 // ============================================================
 function renderTestimonials() {
     const grid = document.getElementById('testimoniGrid');
+    
+    if (!testimonials || testimonials.length === 0) {
+        grid.innerHTML = `
+            <div style="grid-column:1/-1;text-align:center;padding:40px;color:#6a4a5a;">
+                <i class="fas fa-comment-slash" style="font-size:3rem;color:#d81b60;display:block;margin-bottom:16px;"></i>
+                <h3 style="color:#4a1a3a;">Belum ada testimoni</h3>
+                <p>Tambahkan testimoni pertama melalui panel admin</p>
+            </div>
+        `;
+        const list = document.getElementById('testimoniList');
+        list.innerHTML = '<p style="color:#6a4a5a;text-align:center;padding:20px;">Belum ada testimoni.</p>';
+        return;
+    }
+
     grid.innerHTML = testimonials.map(t => `
         <div class="card-testimoni">
             <div class="stars">${'⭐'.repeat(t.rating)}</div>
@@ -698,10 +801,6 @@ function renderTestimonials() {
     `).join('');
 
     const list = document.getElementById('testimoniList');
-    if (testimonials.length === 0) {
-        list.innerHTML = '<p style="color:#6a4a5a;text-align:center;padding:20px;">Belum ada testimoni. Tambahkan testimoni pertama!</p>';
-        return;
-    }
     list.innerHTML = testimonials.map(t => `
         <div class="testimoni-item">
             <div class="info">
